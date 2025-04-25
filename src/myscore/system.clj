@@ -87,10 +87,10 @@
 
 (defn system []
   (component/system-map
-    :mongo (map->MongoComponent {:uri     "mongodb://localhost:27017"
-                                 :db-name "mydb"})
+    :mongo (map->MongoComponent {:uri     (or (System/getenv "MONGO_URI") "mongodb://localhost:27017")
+                                 :db-name "scoreboard"})
     :http  (component/using
-             (map->HttpComponent {:port 8080})
+             (map->HttpComponent {:port (Integer/parseInt (or (System/getenv "PORT") "8080"))})
              [:mongo])))
 
 (defn -main [& _]
