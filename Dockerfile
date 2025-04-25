@@ -7,7 +7,6 @@ WORKDIR /app
 # Copy the project files
 COPY deps.edn ./
 COPY src ./src
-COPY resources ./resources
 
 # Download dependencies
 RUN clojure -P
