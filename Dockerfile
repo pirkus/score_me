@@ -1,5 +1,5 @@
 # Use the official Clojure image as the base
-FROM clojure:openjdk-17
+FROM clojure:temurin-24-tools-deps-alpine
 
 # Set the working directory
 WORKDIR /app
@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8080
 
 # Define the command to run the application
-CMD ["clojure", "-M", "-m", "myapp.system"]
+CMD ["clojure", "-M", "-m", "myscore.system"]
