@@ -26,25 +26,25 @@
 ;; HTTP Component
 ;; ----------------------------------------------------------------------------
 
-(defn create-scoreboard-handler [db]
+(defn create-config-handler [db]
   (fn [request]
     (let [{:keys [name metrics]} (:json-params request)
-          inserted (mc/insert-and-return db "scoreboards"
+          inserted (mc/insert-and-return db "config"
                      {:name name :metrics metrics})]
       (-> (response/response
             {:id (str (:_id inserted))
-             :message "Scoreboard created"})
+             :message "Config created"})
           (response/status 201)))))
 
-(defn get-scoreboard-handler [db]
+(defn get-config-handler [db]
   (fn [request]
     (let [id-str (get-in request [:path-params :id])]
       (try
         (let [object-id (mu/object-id id-str)
-              doc (mc/find-map-by-id db "scoreboards" object-id)]
+              doc (mc/find-map-by-id db "config" object-id)]
           (if doc
             (response/response doc)
-            (-> (response/response {:error "Scoreboard not found"})
+            (-> (response/response {:error "Config not found"})
                 (response/status 404))))
         (catch Exception _
           (-> (response/response {:error "Invalid ID format"})
@@ -53,11 +53,11 @@
 (defn make-routes [db]
   (route/expand-routes
     #{["/scoreboards" :post
-       [(body-params) http/json-body (create-scoreboard-handler db)]
+       [(body-params) http/json-body (create-config-handler db)]
        :route-name :scoreboards-create]
 
       ["/scoreboards/:id" :get
-       [(get-scoreboard-handler db)]
+       [(get-config-handler db)]
        :route-name :scoreboards-get]}))
 
 (defn make-server [port routes]
@@ -87,8 +87,7 @@
 
 (defn system []
   (component/system-map
-    :mongo (map->MongoComponent {:uri     (or (System/getenv "MONGO_URI") "mongodb://localhost:27017")
-                                 :db-name "scoreboard"})
+    :mongo (map->MongoComponent {:uri     (or (System/getenv "MONGO_URI") "mongodb://localhost:27017/score-me")})
     :http  (component/using
              (map->HttpComponent {:port (Integer/parseInt (or (System/getenv "PORT") "8080"))})
              [:mongo])))
