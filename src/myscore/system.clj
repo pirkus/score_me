@@ -13,11 +13,10 @@
 ;; Mongo Component
 ;; ----------------------------------------------------------------------------
 
-(defrecord MongoComponent [uri db-name conn db]
+(defrecord MongoComponent [uri conn db]
   component/Lifecycle
   (start [this]
-    (let [conn (mg/connect uri)
-          db   (mg/get-db conn db-name)]
+    (let [{:keys [conn db]} (mg/connect-via-uri uri)]
       (assoc this :conn conn :db db)))
   (stop [this]
     (when conn (mg/disconnect conn))
