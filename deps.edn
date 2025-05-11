@@ -2,9 +2,11 @@
  :deps {org.clojure/clojure                {:mvn/version "1.11.2"}            ; Pedestal requires Clojure 1.10+ :contentReference[oaicite:0]{index=0}
         com.stuartsierra/component         {:mvn/version "1.1.0"}             ; Component lifecycle management :contentReference[oaicite:1]{index=1}
         io.pedestal/pedestal.service       {:mvn/version "0.7.2"}             ; Core Pedestal service library :contentReference[oaicite:2]{index=2}
+        io.pedestal/pedestal.error         {:mvn/version "0.7.2"}
         io.pedestal/pedestal.jetty         {:mvn/version "0.7.2"}             ; Jetty adapter for Pedestal :contentReference[oaicite:3]{index=3}
         com.novemberain/monger             {:mvn/version "3.6.0"}             ; Idiomatic Clojure MongoDB client :contentReference[oaicite:4]{index=4}
-        cheshire                           {:mvn/version "5.13.0"}}           ; JSON parsing library (optional) :contentReference[oaicite:5]{index=5}
-        ch.qos.logback/logback-classic     {:mvn/version "1.2.6"}
+        cheshire/cheshire                  {:mvn/version "5.13.0"}}           ; JSON parsing library (optional) :contentReference[oaicite:5]{index=5}
+        ch.qos.logback/logback-classic     {:mvn/version "1.5.9"}
+ 
  :aliases
  {:dev {:extra-deps {io.pedestal/pedestal.service-tools {:mvn/version "0.7.1"}}}}}
