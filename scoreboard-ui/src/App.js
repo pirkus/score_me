@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import ConfigForm from './ConfigForm';
+import useTokenExpiryCheck from "./useTokenExpiryCheck";
 import './App.css'; // Make sure to keep your App.css for global styles
 
 const App = () => {
@@ -10,11 +11,14 @@ const App = () => {
   const [configs, setConfigs] = useState([]);
   const [selectedConfig, setSelectedConfig] = useState(null);
 
+  // Check for token expiration every time the user state is updated
+  useTokenExpiryCheck(user, setUser);
+
   useEffect(() => {
     if (user && user.token) {
-	fetch("http://localhost:8080/scoreboard-configs", {
-	    headers: {Authorization: `Bearer ${user.token}`}
-	})
+      fetch("http://localhost:8080/scoreboard-configs", {
+        headers: { Authorization: `Bearer ${user.token}` },
+      })
         .then((response) => response.json())
         .then((data) => setConfigs(data))
         .catch((error) => console.log("Error fetching configs:", error));
@@ -76,7 +80,7 @@ const App = () => {
 
             {currentView === 'create-config' && (
               <div className="form-container config-form"> {/* Use the container from ConfigForm.css */}
-                <ConfigForm user={user} />
+                <ConfigForm user={user} setUser={setUser} />
               </div>
             )}
 

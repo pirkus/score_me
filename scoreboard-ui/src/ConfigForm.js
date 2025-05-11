@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from "react";
+import useTokenExpiryCheck from "./useTokenExpiryCheck";
 
-const ConfigForm = ({ user }) => {
+const ConfigForm = ({ user, setUser }) => {
   const [name, setName] = useState("");
   const [metrics, setMetrics] = useState([{ name: "", expectation: "" }]);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
 
+  useTokenExpiryCheck(user, setUser);
   const validateForm = useCallback(() => {
     const newErrors = {};
     let isValid = true;
