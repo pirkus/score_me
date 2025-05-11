@@ -1,18 +1,19 @@
 (ns myscore.system
   (:require
+   [cheshire.core :as json]
+   [clojure.spec.alpha :as s]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
    [io.pedestal.http.body-params :refer [body-params]]
    [io.pedestal.http.route :as route]
    [io.pedestal.interceptor :as interceptor]
    [io.pedestal.interceptor.error :as err]
-   [monger.core :as mg]
    [monger.collection :as mc]
+   [monger.core :as mg]
    [monger.util :as mu]
-   [ring.util.response :as response]
-   [clojure.spec.alpha :as s]
-   [cheshire.core :as json]
-   [myscore.db :as db]))
+   [myscore.db :as db]
+   [myscore.jwt :as jwt]
+   [ring.util.response :as response]))
 
 (def exception-handler
   (err/error-dispatch [context ex]
@@ -93,7 +94,7 @@
 (defn make-routes [db]
   (route/expand-routes
    #{["/scoreboard-config" :post
-      [exception-handler (body-params) (validate-create-config) (create-config-handler db)]
+      [jwt/auth-interceptor exception-handler (body-params) (validate-create-config) (create-config-handler db)]
       :route-name :config-create]
 
      ["/scoreboard-configs" :get

@@ -5,8 +5,13 @@
         io.pedestal/pedestal.error         {:mvn/version "0.7.2"}
         io.pedestal/pedestal.jetty         {:mvn/version "0.7.2"}             ; Jetty adapter for Pedestal :contentReference[oaicite:3]{index=3}
         com.novemberain/monger             {:mvn/version "3.6.0"}             ; Idiomatic Clojure MongoDB client :contentReference[oaicite:4]{index=4}
-        cheshire/cheshire                  {:mvn/version "5.13.0"}}           ; JSON parsing library (optional) :contentReference[oaicite:5]{index=5}
+        cheshire/cheshire                  {:mvn/version "5.13.0"}           ; JSON parsing library (optional) :contentReference[oaicite:5]{index=5}
         ch.qos.logback/logback-classic     {:mvn/version "1.5.9"}
+        buddy/buddy-sign                   {:mvn/version "3.6.1-359"}
+        clj-http/clj-http                  {:mvn/version "3.13.0"}
+        magnet/buddy-auth.jwt-oidc         {:mvn/version "0.10.3"}
+        buddy/buddy-auth                   {:mvn/version "3.0.323"}
+        com.github.sikt-no/clj-jwt {:mvn/version "0.5.102"}}
  
  :aliases
- {:dev {:extra-deps {io.pedestal/pedestal.service-tools {:mvn/version "0.7.1"}}}}}
+ {:dev {:extra-deps {io.pedestal/pedestal.service-tools {:mvn/version "0.7.2"}}}}}

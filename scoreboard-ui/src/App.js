@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import ConfigForm from './ConfigForm';
-import ScorecardForm from './ScorecardForm';
 import './App.css'; // Make sure to keep your App.css for global styles
 
 const App = () => {
@@ -50,7 +49,7 @@ const App = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID"> {/* Replace with your actual client ID */}
+    <GoogleOAuthProvider clientId="96361216057-f2bbdvmomo6hqbt5sedmlgbeeud8feg7.apps.googleusercontent.com"> {/* Replace with your actual client ID */}
       <div className="App">
         <h1>🎯 Scorecard System</h1>
 
@@ -78,17 +77,6 @@ const App = () => {
             {currentView === 'create-config' && (
               <div className="form-container config-form"> {/* Use the container from ConfigForm.css */}
                 <ConfigForm user={user} />
-              </div>
-            )}
-
-            {currentView === 'create-scorecard' && (
-              <div className="form-container"> {/* You might want a general form container class in App.css */}
-                <ScorecardForm
-                  configs={configs}
-                  setSelectedConfig={setSelectedConfig}
-                  selectedConfig={selectedConfig}
-                  user={user}
-                />
               </div>
             )}
 
