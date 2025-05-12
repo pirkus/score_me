@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import ConfigForm from './ConfigForm';
+import CreateScorecard from './CreateScorecard'
 import useTokenExpiryCheck from "./useTokenExpiryCheck";
 import './App.css'; // Make sure to keep your App.css for global styles
 
@@ -81,6 +82,12 @@ const App = () => {
             {currentView === 'create-config' && (
               <div className="form-container config-form"> {/* Use the container from ConfigForm.css */}
                 <ConfigForm user={user} setUser={setUser} />
+              </div>
+            )}
+
+	    {currentView === 'create-scorecard' && (
+              <div className="form-view">
+                <CreateScorecard user={user} setUser={setUser} configs={configs} />
               </div>
             )}
 

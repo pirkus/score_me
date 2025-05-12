@@ -1,4 +1,4 @@
-/* App.css */
+/* App.css - Combined Styles */
 .App {
   font-family: 'Arial', sans-serif;
   text-align: center;
@@ -21,13 +21,16 @@ h1 {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* Default width, can be overridden by more specific classes like .config-form or .create-scorecard-form */
   width: 450px;
   margin: 20px auto;
 }
 
-input {
+input,
+select, /* Added select here for general consistency */
+textarea { /* Added textarea here for general consistency */
   padding: 10px;
-  margin: 12px 0;
+  margin: 12px 0; /* Default margin, can be overridden */
   width: 100%;
   border-radius: 5px;
   border: 1px solid #ddd;
@@ -35,6 +38,7 @@ input {
   outline: none;
   box-sizing: border-box;
 }
+
 
 button {
   padding: 12px 20px;
@@ -48,7 +52,7 @@ button {
   margin-bottom: 1rem;
 }
 
-.button-container {
+.button-container { /* This was for menu buttons in App.js primarily */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,7 +60,6 @@ button {
 
 .button-container button {
   width: auto;
-  /* Color styles for menu and navigation buttons */
   background-color: #4caf50; /* Default green */
 }
 
@@ -64,6 +67,7 @@ button {
   background-color: #45a049;
 }
 
+/* Type selectors might be too broad, consider classing them if issues arise */
 .button-container button[type="button"] {
   background-color: #ff9800; /* Default orange */
 }
@@ -82,25 +86,135 @@ p {
   margin-left: 5px;
 }
 
-@media (min-width: 768px) {
-  .App {
-    padding: 40px;
-  }
-  .form-container {
-    width: 500px;
-  }
+.login-container {
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
+.user-welcome {
+  background-color: #e7f3fe;
+  border-left: 5px solid #2196F3;
+  padding: 10px 15px;
+  margin: 0 auto 25px auto;
+  max-width: 500px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.user-welcome p {
+  color: #333;
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.main-menu {
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.main-menu h2 {
+  font-size: 1.8em;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.menu-section {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.menu-section h3 {
+  font-size: 1.4em;
+  color: #4caf50;
+  margin-bottom: 15px;
+}
+
+.main-menu button {
+  background-color: #4caf50;
+  color: white;
+  padding: 12px 25px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.main-menu button:hover {
+  background-color: #45a049;
+}
+
+.menu-section button[onClick*="edit-scorecard"] {
+  background-color: #2196F3; /* Blue */
+}
+.menu-section button[onClick*="edit-scorecard"]:hover {
+  background-color: #1976D2;
+}
+
+/* General Navigation Buttons Styling */
+.nav-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 10px 5px;
+}
+
+.back-button {
+  background-color: #6c757d; /* Grey */
+}
+
+.back-button:hover {
+  background-color: #5a6268;
+}
+
+.logout-button {
+  background-color: #dc3545; /* Red */
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}
+
+.form-view {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+
 /* Styles for ConfigForm specifically */
-.config-form {
+.config-form { /* This class is used on a .form-container div */
   /* Inherits general form styling from .form-container */
+  /* Specific width for config form if different from generic .form-container */
+   width: 450px; /* Example: explicit width */
 }
 
 .config-form h2 {
   text-align: center;
   margin-bottom: 20px;
   color: #4caf50;
-  font-size: 2.5em;
+  font-size: 2.5em; /* Larger than .main-menu h2 */
 }
 
 .config-form label {
@@ -115,7 +229,7 @@ p {
   padding: 10px;
   border: 1px solid #eee;
   border-radius: 3px;
-  overflow: hidden;
+  overflow: hidden; /* Or use clearfix */
 }
 
 .metric-inputs {
@@ -128,44 +242,45 @@ p {
 
 .metric-inputs > div {
   flex-grow: 1;
-  min-width: 0;
+  min-width: 0; /* Prevents overflow in flex items */
 }
 
+/* Inputs within metric-inputs, not all inputs in config-form */
 .metric-inputs input[type="text"] {
   flex-grow: 1;
-  width: auto;
-  margin: 0;
+  margin: 0; /* Override general input margin */
   min-width: 0;
 }
 
 .remove-metric-button {
   padding: 0;
-  font-size: 1.5em; /* Adjust size as needed */
-  color: #f44336; /* Match the red color */
+  font-size: 1.5em;
+  color: #f44336;
   border: none;
-  border-radius: 0; /* Remove the circle */
-  transition: none; /* Remove any transition effects */
-  background-color: transparent; /* Make the background transparent */
+  border-radius: 0;
+  transition: none;
+  background-color: transparent;
   margin-left: 10px;
-  width: auto; /* Adjust width to content */
-  height: auto; /* Adjust height to content */
-  display: inline-flex; /* Align with the text inputs */
+  width: auto;
+  height: auto;
+  display: inline-flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   line-height: 1;
-  font-weight: normal; /* Remove bold */
-  flex-shrink: 0; /* Prevent shrinking */
+  font-weight: normal;
+  flex-shrink: 0;
 }
 
-/* Remove hover effect */
 .remove-metric-button:hover {
-  background-color: transparent;
+  background-color: transparent; /* Keep transparent on hover */
+  /* color: #d32f2f; /* Optional: darken color on hover */
 }
 
-/* Specific styling for the Add Metric and Submit Config buttons */
 .config-form .add-metric-button {
   background-color: #ff9800; /* Orange */
+  width: 100%;
+  display: block;
 }
 
 .config-form .add-metric-button:hover {
@@ -173,23 +288,27 @@ p {
 }
 
 .config-form .submit-button {
-  background-color: #5cb85c; /* Green (slightly different shade) */
+  background-color: #5cb85c; /* Green */
+  width: 100%;
+  display: block;
 }
 
 .config-form .submit-button:hover {
-  background-color: #51a351; /* Darker green */
+  background-color: #51a351;
 }
 
-.error-message {
+.error-message { /* General error message style */
   font-size: 0.8em;
   color: darkorange;
   margin-top: 0.2em;
+  /* text-align: left; /* Default for forms */
 }
 
-.success-message,
-.main-message {
+.success-message, /* General success message style */
+.main-message { /* General main message style from ConfigForm */
   font-size: 1.2em;
   margin-top: 10px;
+  /* text-align: left; /* Default for forms */
 }
 
 .success-message {
@@ -197,58 +316,217 @@ p {
   font-weight: bold;
 }
 
-.main-message {
+.main-message { /* This was used in ConfigForm for non-success messages */
   color: #333;
 }
 
-.navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+
+/* === Styles previously in CreateScorecard.css === */
+
+.create-scorecard-form {
+  /* This class is used on a .form-container div */
+  /* Overrides for width from the base .form-container */
+  width: 80%;
+  max-width: 900px;
+  /* margin: 20px auto; /* Already in .form-container */
+}
+
+.create-scorecard-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #4caf50; /* Match theme */
+  font-size: 2.2em; /* Slightly smaller than config form H2 */
+}
+
+.create-scorecard-form .form-group { /* Used for grouping label + select/textarea */
+  margin-bottom: 20px;
+}
+
+.create-scorecard-form label { /* Specific label styling if needed, or rely on general if identical */
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Specific styling for select and general-notes textarea within create-scorecard-form */
+.create-scorecard-form select,
+.create-scorecard-form textarea#general-notes {
   width: 100%;
-  background-color: #f0f4f8;
-  padding: 10px 20px;
-  text-align: right;
-  border-top: 1px solid #ddd;
-  box-sizing: border-box;
-}
-
-.navigation button {
-  padding: 12px 20px;
-  font-size: 1em;
-  color: white;
-  border: none;
+  padding: 10px;
+  border: 1px solid #ddd;
   border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-left: 10px;
-  background-color: #5cb85c; /* Green for navigation buttons */
+  box-sizing: border-box;
+  font-size: 1em;
+  /* margin: 0; /* Reset margin if it was set by general input/textarea styles and not desired */
 }
 
-.navigation button.logout {
-  background-color: #d9534f; /* Red for logout */
+.create-scorecard-form select {
+  appearance: none; /* For custom arrow if desired, or leave default */
+  background-color: #fff; /* Ensure select background is white */
 }
 
-.navigation button.logout:hover {
-  background-color: #c9302c;
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 0.95em;
 }
 
-.navigation button.back {
-  background-color: #5cb85c; /* Green for back */
+.scorecard-table th,
+.scorecard-table td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
 }
 
-.navigation button.back:hover {
-  background-color: #51a351;
+.scorecard-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  color: #333;
 }
 
-.config-form .add-metric-button,
-.config-form .submit-button {
-  width: 100%; /* Make them take the full width of their container */
-  display: block; /* Ensure they are block-level elements */
+/* Inputs and textareas within the scorecard table */
+.scorecard-table input[type="number"],
+.scorecard-table textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1em;
+  margin: 0; /* Override general input/textarea margin if set */
 }
 
-@media (min-width: 768px) {
-  .form-container {
-    width: 500px;
+.scorecard-table textarea {
+  min-height: 50px;
+  resize: vertical;
+}
+
+.scorecard-table input[type="number"] {
+  max-width: 120px; /* Constrain width of number inputs in table */
+}
+
+/* Error messages within the table, more specific than general .error-message */
+.scorecard-table .error-message.small {
+  font-size: 0.75em;
+  color: darkorange; /* Consistent error color */
+  margin-top: 3px;
+  display: block; /* Ensure it takes its own line */
+  /* text-align: left; /* Align with table cell content */
+}
+
+.create-scorecard-form .submit-button {
+  background-color: #007bff; /* Blue for scorecard submission */
+  color: white;
+  width: 100%;
+  padding: 12px; /* Slightly different padding perhaps */
+  font-size: 1.1em;
+  /* border: none; /* From general button style */
+  /* border-radius: 5px; /* From general button style */
+  /* margin-top: 10px; /* From general button style, adjust if needed */
+}
+
+.create-scorecard-form .submit-button:hover {
+  background-color: #0056b3;
+}
+
+/* Specific message styling for CreateScorecard form */
+.create-scorecard-form .main-error-message { /* For major form-level errors */
+  color: #dc3545; /* Bootstrap danger color */
+  font-weight: bold;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.create-scorecard-form .success-message { /* Overrides general .success-message if more specific styling is needed */
+  /* color: green; /* From general .success-message */
+  /* font-weight: bold; /* From general .success-message */
+  /* margin-top: 15px; /* Slightly different from general .success-message */
+  text-align: center; /* Specific to scorecard messages */
+}
+
+
+/* Responsive table styles (from CreateScorecard.css) */
+@media (max-width: 768px) {
+  .create-scorecard-form { /* Further adjust width for small screens */
+    width: 95%;
   }
+
+  .scorecard-table,
+  .scorecard-table thead,
+  .scorecard-table tbody,
+  .scorecard-table th,
+  .scorecard-table td,
+  .scorecard-table tr {
+    display: block;
+  }
+
+  .scorecard-table thead tr { /* Hide table headers visually but keep them accessible */
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .scorecard-table tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  .scorecard-table td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 50%; /* Make space for the data-label */
+    text-align: right; /* Align cell content to the right */
+    white-space: normal; /* Allow content to wrap */
+    min-height: 30px; /* Ensure cells have some height */
+    display: flex;
+    align-items: center; /* Vertically align label and input/textarea */
+    justify-content: flex-end; /* Push content to the right */
+  }
+
+  .scorecard-table td::before { /* This acts as the new "header" for each cell */
+    content: attr(data-label); /* Use the data-label attribute from the td */
+    position: absolute;
+    left: 10px;
+    width: calc(50% - 20px); /* Adjust width to fit on the left */
+    padding-right: 10px;
+    font-weight: bold;
+    text-align: left; /* Align the label text to the left */
+    white-space: normal;
+  }
+
+  .scorecard-table input[type="number"],
+  .scorecard-table textarea {
+    max-width: none; /* Allow inputs to take full available width on the right */
+    /* margin-left: auto; /* Pushes the input to the right in the flex container */
+    width: auto; /* Let flexbox determine width for inputs */
+    flex-grow: 1; /* Allow input to take available space */
+  }
+   .scorecard-table td textarea {
+     width: 100%; /* Ensure textarea uses its flex space fully */
+  }
+
+
+  /* Error messages in responsive table */
+  .scorecard-table .error-message.small {
+    text-align: right; /* Align with input */
+    width: 100%; /* Take full width of its container (the input's parent td part) */
+    padding-left: 0; /* Adjust if needed due to parent padding */
+  }
+}
+
+/* General Responsive Adjustments from original App.css */
+@media (min-width: 768px) {
+  .App {
+    padding: 40px;
+  }
+  .form-container { /* Base for larger screens, specific forms can override */
+    /* width: 500px; /* This was here, but specific forms now control their width */
+  }
+  /* .config-form for larger screens, if needed */
+  /* .create-scorecard-form already defines its large screen width */
 }

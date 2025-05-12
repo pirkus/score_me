@@ -81,15 +81,14 @@
          :body    (json/generate-string {:error (:error result)})
          :headers {"Content-Type" "application/json"}}))))
 
-(defn get-config-handler [db]
+(defn get-configs-handler [db]
   (fn [request]
-    (let [id-str    (get-in request [:path-params :id])
-          object-id (mu/object-id id-str)
-          doc       (mc/find-map-by-id db "config" object-id)]
-      (if doc
-        (response/response doc)
-        (-> (response/response {:error "Config not found"})
-            (response/status 404))))))
+    (let [docs (mc/find-maps db "config" {:email (get-in request [:identity :email])})]
+      {:status  200
+       :body (->> docs
+                  (map #(dissoc % :_id))
+                  (json/generate-string))
+       :headers {"Content-Type" "application/json"}})))
 
 (defn make-routes [db]
   (route/expand-routes
@@ -98,7 +97,7 @@
       :route-name :config-create]
 
      ["/scoreboard-configs" :get
-      [(get-config-handler db)]
+      [jwt/auth-interceptor exception-handler (get-configs-handler db)]
       :route-name :config-get]}))
 
 (defn make-server [port routes]

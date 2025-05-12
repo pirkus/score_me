@@ -18,7 +18,8 @@
      (let [authz (get-in context [:request :headers "authorization"])]
        (if (and authz (str/starts-with? authz "Bearer "))
          (let [token (subs authz 7)
-               claims (verify-google-jwt token)]
+               claims (verify-google-jwt token)
+               _ (println "Claims: " claims)]
            (if claims
              (assoc-in context [:request :identity] claims)
              (assoc context :response {:status 401 :body "Invalid or expired token"})))
