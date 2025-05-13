@@ -530,3 +530,24 @@ p {
   /* .config-form for larger screens, if needed */
   /* .create-scorecard-form already defines its large screen width */
 }
+
+/* Add CSS for date range inputs */
+.date-range-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.date-input {
+  flex: 1;
+}
+
+.date-input input[type="date"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1em;
+}
+
+/* Add this to the end of the existing CSS file */

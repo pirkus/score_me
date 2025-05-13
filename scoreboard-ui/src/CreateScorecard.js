@@ -9,6 +9,8 @@ const CreateScorecard = ({ user, setUser, configs }) => {
   const [selectedConfigDetails, setSelectedConfigDetails] = useState(null);
   const [scores, setScores] = useState([]);
   const [generalNotes, setGeneralNotes] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState({});
 
@@ -65,6 +67,21 @@ const CreateScorecard = ({ user, setUser, configs }) => {
       isValid = false;
     }
 
+    if (!startDate) {
+      newErrors.startDate = "Start date is required.";
+      isValid = false;
+    }
+
+    if (!endDate) {
+      newErrors.endDate = "End date is required.";
+      isValid = false;
+    }
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      newErrors.dateRange = "Start date must be before end date.";
+      isValid = false;
+    }
+
     scores.forEach((score, index) => {
       if (score.devScore.trim() === '') {
         newErrors.scores[index] = { ...newErrors.scores[index], devScore: "Dev score cannot be empty." };
@@ -85,7 +102,7 @@ const CreateScorecard = ({ user, setUser, configs }) => {
 
     setErrors(newErrors);
     return isValid;
-  }, [selectedConfigName, scores]);
+  }, [selectedConfigName, scores, startDate, endDate]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -110,6 +127,8 @@ const CreateScorecard = ({ user, setUser, configs }) => {
         notes: s.notes,
       })),
       generalNotes: generalNotes,
+      startDate: startDate,
+      endDate: endDate,
       dateCreated: new Date().toISOString(),
     };
 
@@ -130,6 +149,8 @@ const CreateScorecard = ({ user, setUser, configs }) => {
         setSelectedConfigDetails(null);
         setScores([]);
         setGeneralNotes('');
+        setStartDate('');
+        setEndDate('');
         setErrors({});
       } else {
         const errorData = await res.json().catch(() => ({ message: res.statusText }));
@@ -139,7 +160,7 @@ const CreateScorecard = ({ user, setUser, configs }) => {
       console.error("Network or other error:", error);
       setMessage(`❌ Network error: ${error.message}`);
     }
-  }, [user, selectedConfigDetails, scores, generalNotes, validateForm]);
+  }, [user, selectedConfigDetails, scores, generalNotes, startDate, endDate, validateForm]);
 
 
   if (!user) {
@@ -174,6 +195,32 @@ const CreateScorecard = ({ user, setUser, configs }) => {
 
         {selectedConfigDetails && (
           <>
+            <div className="date-range-container">
+              <div className="form-group date-input">
+                <label htmlFor="start-date">Start Date:</label>
+                <input
+                  type="date"
+                  id="start-date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
+                />
+                {errors.startDate && <p className="error-message">{errors.startDate}</p>}
+              </div>
+              <div className="form-group date-input">
+                <label htmlFor="end-date">End Date:</label>
+                <input
+                  type="date"
+                  id="end-date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required
+                />
+                {errors.endDate && <p className="error-message">{errors.endDate}</p>}
+              </div>
+            </div>
+            {errors.dateRange && <p className="error-message">{errors.dateRange}</p>}
+
             <h3>Metrics for: {selectedConfigDetails.name}</h3>
             <table className="scorecard-table">
               <thead>

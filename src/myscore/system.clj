@@ -49,6 +49,20 @@
 (s/def ::email string?)
 (s/def ::create-config-params (s/keys :req-un [::name ::metrics ::email]))
 
+(s/def ::metricName string?)
+(s/def ::devScore (s/and number? #(<= 0 % 10)))
+(s/def ::mentorScore (s/and number? #(<= 0 % 10)))
+(s/def ::notes string?)
+(s/def ::score (s/keys :req-un [::metricName ::devScore ::mentorScore] :opt-un [::notes]))
+(s/def ::scores (s/coll-of ::score :min-count 1))
+(s/def ::configName string?)
+(s/def ::generalNotes string?)
+(s/def ::dateCreated string?)
+(s/def ::startDate string?)
+(s/def ::endDate string?)
+(s/def ::create-scorecard-params (s/keys :req-un [::configName ::email ::scores ::dateCreated ::startDate ::endDate] 
+                                         :opt-un [::generalNotes]))
+
 ;; ----------------------------------------------------------------------------
 ;; Validation Interceptor
 ;; ----------------------------------------------------------------------------
@@ -63,6 +77,18 @@
                  (assoc context :response
                         (-> (response/response {:error "Invalid config parameters"
                                                 :details (s/explain-data ::create-config-params params)})
+                            (response/status 400))))))}))
+
+(defn validate-create-scorecard []
+  (interceptor/interceptor
+   {:name ::validate-create-scorecard
+    :enter (fn [context]
+             (let [params (get-in context [:request :json-params])]
+               (if (s/valid? ::create-scorecard-params params)
+                 context
+                 (assoc context :response
+                        (-> (response/response {:error "Invalid scorecard parameters"
+                                                :details (s/explain-data ::create-scorecard-params params)})
                             (response/status 400))))))}))
 
 ;; ----------------------------------------------------------------------------
@@ -90,6 +116,24 @@
                   (json/generate-string))
        :headers {"Content-Type" "application/json"}})))
 
+(defn create-scorecard-handler [db]
+  (fn [request]
+    (let [scorecard-data (:json-params request)
+          id (mu/object-id)
+          document (assoc scorecard-data :_id id)
+          result (try
+                   (mc/insert db "scorecards" document)
+                   {:result "saved" :id (str id)}
+                   (catch Exception e
+                     {:error (.getMessage e)}))]
+      (if (contains? result :result)
+        {:status  200
+         :body    (json/generate-string result)
+         :headers {"Content-Type" "application/json"}}
+        {:status  400
+         :body    (json/generate-string {:error (:error result)})
+         :headers {"Content-Type" "application/json"}}))))
+
 (defn make-routes [db]
   (route/expand-routes
    #{["/scoreboard-config" :post
@@ -98,7 +142,11 @@
 
      ["/scoreboard-configs" :get
       [jwt/auth-interceptor exception-handler (get-configs-handler db)]
-      :route-name :config-get]}))
+      :route-name :config-get]
+      
+     ["/create-scoreboard" :post
+      [jwt/auth-interceptor exception-handler (body-params) (validate-create-scorecard) (create-scorecard-handler db)]
+      :route-name :scorecard-create]}))
 
 (defn make-server [port routes]
   (-> {::http/routes routes
