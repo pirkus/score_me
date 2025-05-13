@@ -6,6 +6,9 @@ import CreateScorecard from './CreateScorecard'
 import useTokenExpiryCheck from "./useTokenExpiryCheck";
 import './App.css'; // Make sure to keep your App.css for global styles
 
+// Load environment-specific configuration
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('menu');
@@ -17,7 +20,7 @@ const App = () => {
 
   useEffect(() => {
     if (user && user.token) {
-      fetch("http://localhost:8080/scoreboard-configs", {
+      fetch(`${API_URL}/scoreboard-configs`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
         .then((response) => response.json())
