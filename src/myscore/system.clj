@@ -33,6 +33,8 @@
   (start [this]
     (let [{:keys [conn db]} (mg/connect-via-uri uri)]
       (mc/ensure-index db "config" (array-map :email 1 :name 1) {:unique true})
+      ;; Index for faster scorecard queries by email
+      (mc/ensure-index db "scorecards" (array-map :email 1) {:name "scorecards_email_idx"})
       (assoc this :conn conn :db db)))
   (stop [this]
     (when conn (mg/disconnect conn))
@@ -116,23 +118,48 @@
                   (json/generate-string))
        :headers {"Content-Type" "application/json"}})))
 
+;; Helper function to find existing overlapping scorecards
+(defn find-overlapping-scorecard
+  "Find any scorecard for the same user that overlaps with the given date range"
+  [db email start-date end-date]
+  (mc/find-one-as-map db "scorecards" 
+                      {:email email
+                       :$or [{:startDate {:$lte end-date}
+                              :endDate {:$gte start-date}}]}))
+
 (defn create-scorecard-handler [db]
   (fn [request]
     (let [scorecard-data (:json-params request)
-          id (mu/object-id)
-          document (assoc scorecard-data :_id id)
-          result (try
-                   (mc/insert db "scorecards" document)
-                   {:result "saved" :id (str id)}
-                   (catch Exception e
-                     {:error (.getMessage e)}))]
-      (if (contains? result :result)
-        {:status  200
-         :body    (json/generate-string result)
+          email (:email scorecard-data)
+          start-date (:startDate scorecard-data)
+          end-date (:endDate scorecard-data)
+          existing (find-overlapping-scorecard db email start-date end-date)]
+      
+      (if existing
+        ;; Return error for overlap
+        {:status 400
+         :body (json/generate-string 
+                {:error (str "This time period overlaps with an existing scorecard. "
+                             "You already have a scorecard for " 
+                             (:startDate existing) " to " 
+                             (:endDate existing) ".")})
          :headers {"Content-Type" "application/json"}}
-        {:status  400
-         :body    (json/generate-string {:error (:error result)})
-         :headers {"Content-Type" "application/json"}}))))
+        
+        ;; No overlap, create new scorecard
+        (let [id (mu/object-id)
+              document (assoc scorecard-data :_id id)
+              result (try
+                       (mc/insert db "scorecards" document)
+                       {:result "saved" :id (str id)}
+                       (catch Exception e
+                         {:error (.getMessage e)}))]
+          (if (contains? result :result)
+            {:status 200
+             :body (json/generate-string result)
+             :headers {"Content-Type" "application/json"}}
+            {:status 400
+             :body (json/generate-string {:error (:error result)})
+             :headers {"Content-Type" "application/json"}}))))))
 
 (defn make-routes [db]
   (route/expand-routes
