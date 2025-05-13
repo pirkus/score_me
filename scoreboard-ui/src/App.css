@@ -524,11 +524,7 @@ p {
   .App {
     padding: 40px;
   }
-  .form-container { /* Base for larger screens, specific forms can override */
-    /* width: 500px; /* This was here, but specific forms now control their width */
-  }
-  /* .config-form for larger screens, if needed */
-  /* .create-scorecard-form already defines its large screen width */
+  /* Specific form widths are now controlled by individual form components */
 }
 
 /* Add CSS for date range inputs */
