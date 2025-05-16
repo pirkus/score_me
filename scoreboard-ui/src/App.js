@@ -3,6 +3,8 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import ConfigForm from './ConfigForm';
 import CreateScorecard from './CreateScorecard'
+import ScorecardsList from './ScorecardsList'
+import ViewScorecard from './ViewScorecard'
 import useTokenExpiryCheck from "./useTokenExpiryCheck";
 import './App.css'; // Make sure to keep your App.css for global styles
 
@@ -14,6 +16,7 @@ const App = () => {
   const [currentView, setCurrentView] = useState('menu');
   const [configs, setConfigs] = useState([]);
   const [selectedConfig, setSelectedConfig] = useState(null);
+  const [selectedScorecardId, setSelectedScorecardId] = useState(null);
 
   // Check for token expiration every time the user state is updated
   useTokenExpiryCheck(user, setUser);
@@ -54,6 +57,12 @@ const App = () => {
 
   const handleMenuSelect = (view) => {
     setCurrentView(view);
+    setSelectedScorecardId(null);
+  };
+
+  const handleViewScorecard = (scorecardId) => {
+    setSelectedScorecardId(scorecardId);
+    setCurrentView('view-scorecard');
   };
 
   return (
@@ -78,7 +87,7 @@ const App = () => {
                 <button onClick={() => handleMenuSelect('create-config')}>📊 Create Config</button>
                 <h3>Scorecard:</h3>
                 <button onClick={() => handleMenuSelect('create-scorecard')}>📝 Create Scorecard</button>
-                <button onClick={() => handleMenuSelect('edit-scorecard')}>✏️Edit Scorecard</button>
+                <button onClick={() => handleMenuSelect('view-scorecards')}>📄 View Scorecards</button>
               </div>
             )}
 
@@ -88,9 +97,25 @@ const App = () => {
               </div>
             )}
 
-	    {currentView === 'create-scorecard' && (
+            {currentView === 'create-scorecard' && (
               <div className="form-view">
                 <CreateScorecard user={user} setUser={setUser} configs={configs} />
+              </div>
+            )}
+
+            {currentView === 'view-scorecards' && (
+              <div className="form-view">
+                <ScorecardsList user={user} onViewScorecard={handleViewScorecard} />
+              </div>
+            )}
+
+            {currentView === 'view-scorecard' && (
+              <div className="form-view">
+                <ViewScorecard 
+                  user={user} 
+                  setUser={setUser} 
+                  scorecardId={selectedScorecardId} 
+                />
               </div>
             )}
 

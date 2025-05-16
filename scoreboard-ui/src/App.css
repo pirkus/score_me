@@ -524,7 +524,6 @@ p {
   .App {
     padding: 40px;
   }
-  /* Specific form widths are now controlled by individual form components */
 }
 
 /* Add CSS for date range inputs */
@@ -544,6 +543,72 @@ p {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1em;
+}
+
+/* View Scorecard Styles */
+.view-scorecard-form {
+  width: 80%;
+  max-width: 900px;
+}
+
+.view-scorecard-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #4caf50;
+  font-size: 2.2em;
+}
+
+.scorecard-info {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-group {
+  margin-bottom: 30px;
+}
+
+.info-group h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.4em;
+}
+
+.info-group p {
+  margin: 8px 0;
+  color: #666;
+}
+
+.general-notes {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.general-notes h4 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.general-notes p {
+  color: #666;
+  white-space: pre-wrap;
+}
+
+.view-button {
+  background-color: #2196F3;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-button:hover {
+  background-color: #1976D2;
 }
 
 /* Add this to the end of the existing CSS file */
