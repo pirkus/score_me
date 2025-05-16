@@ -5,14 +5,10 @@ FROM clojure:temurin-24-tools-deps-alpine
 WORKDIR /app
 
 # Copy the project files
-COPY deps.edn ./
-COPY src ./src
+COPY . .
 
 # Download dependencies
 RUN clojure -P
-
-# Copy the rest of the application
-COPY . .
 
 # Expose the port the app runs on
 EXPOSE 8080

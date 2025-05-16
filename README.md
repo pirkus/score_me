@@ -1,13 +1,16 @@
 # Score Me
 
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html).
+
 A scoring system with a Clojure backend and React frontend that allows users to create and manage scorecards.
 
 ## Project Structure
 
-- `scoreboard-ui/` - React frontend application
-- `src/` - Clojure backend application
-- `Dockerfile` - Container configuration for the backend
-- `Makefile` - Build and run scripts
+- `backend/` (Clojure source in `src/`)
+- `scoreboard-ui/` (React frontend)
+- `docker-compose.yml` (multi-service orchestration)
+- `Dockerfile` (backend)
+- `scoreboard-ui/Dockerfile` (frontend)
 
 ## Prerequisites
 
@@ -15,6 +18,8 @@ A scoring system with a Clojure backend and React frontend that allows users to 
 - Clojure and Java (for backend)
 - Docker (optional, for containerized deployment)
 - MongoDB (database)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
 ## Environment Variables
 
@@ -160,6 +165,53 @@ cd scoreboard-ui
 npm test
 ```
 
-## License
+## Development Workflow (with Docker Compose)
 
-[Your License Here] 
+1. **Start all services:**
+   ```sh
+   docker-compose up --build
+   ```
+   - This will start MongoDB, the backend, and the frontend.
+   - The backend will be available at [http://localhost:8080](http://localhost:8080)
+   - The frontend will be available at [http://localhost:3000](http://localhost:3000)
+
+2. **Stop all services:**
+   ```sh
+   docker-compose down
+   ```
+
+3. **Rebuild after code changes:**
+   ```sh
+   docker-compose up --build
+   ```
+
+4. **View logs for all services:**
+   ```sh
+   docker-compose logs -f
+   ```
+
+## Service Details
+
+- **MongoDB**
+  - Exposed on port 27017
+  - Data persisted in a Docker volume (`mongo_data`)
+- **Backend (Clojure)**
+  - Exposed on port 8080
+  - Hot reloads on code changes if you restart the service
+- **Frontend (React)**
+  - Exposed on port 3000
+  - Hot reloads on code changes
+
+## Production
+- You can adapt the `docker-compose.yml` for production by using optimized builds and environment variables.
+
+## Troubleshooting
+- If you encounter port conflicts, ensure nothing else is running on 27017, 8080, or 3000.
+- For persistent MongoDB data, the `mongo_data` volume is used. To clear it:
+  ```sh
+  docker-compose down -v
+  ```
+
+---
+
+For any further questions or setup help, see the comments in `docker-compose.yml` or ask your team! 

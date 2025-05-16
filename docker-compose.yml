@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: scoreboard-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: .
+    command: clojure -M -m myscore.system
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/score-me
+      - PORT=8080
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  frontend:
+    build:
+      context: ./scoreboard-ui
+    command: npm start
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - PORT=3000
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./scoreboard-ui:/app
+    working_dir: /app
+
+volumes:
+  mongo_data: 
