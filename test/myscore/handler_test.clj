@@ -3,6 +3,7 @@
     [clojure.test :refer [deftest is testing use-fixtures]]
     [cheshire.core :as json]
     [myscore.system :as system]
+    [myscore.specs :as specs]
     [clojure.spec.alpha :as s]
     [monger.core :as mg]
     [monger.collection :as mc])
@@ -61,8 +62,8 @@
 
     ;; In a real system, the validation would be handled by interceptors before the handler
     (testing "Validation using spec directly"
-      (is (not (s/valid? :myscore.system/create-config-params invalid-body)))
-      (is (s/valid? :myscore.system/create-config-params valid-body)))))
+      (is (not (s/valid? ::specs/create-config-params invalid-body)))
+      (is (s/valid? ::specs/create-config-params valid-body)))))
 
 ;; Test that mimics the actual request flow with interceptors
 (deftest create-config-validation-test

@@ -6,6 +6,7 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
   const [scorecards, setScorecards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!user || !user.token) {
@@ -33,6 +34,29 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
     fetchScorecards();
   }, [user]);
 
+  const handleArchive = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/scorecards/${id}/archive`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+
+      // Remove the archived scorecard from the list
+      setScorecards(prevScorecards => prevScorecards.filter(sc => sc.id !== id));
+      setMessage('Scorecard archived successfully');
+      
+      // Clear the success message after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (!user) return <p>Please login to view your scorecards.</p>;
   if (loading) return <p>Loading scorecards...</p>;
   if (error) return <p className="error-message">Error: {error}</p>;
@@ -41,6 +65,7 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
   return (
     <div className="scorecards-list">
       <h2>Your Scorecards</h2>
+      {message && <p className="success-message">{message}</p>}
       <table className="scorecard-table">
         <thead>
           <tr>
@@ -62,8 +87,16 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
                 <button 
                   onClick={() => onViewScorecard(sc.id)}
                   className="view-button"
+                  title="View Scorecard"
                 >
                   👁️
+                </button>
+                <button
+                  onClick={() => handleArchive(sc.id)}
+                  className="archive-button"
+                  title="Archive Scorecard"
+                >
+                  📦 Archive
                 </button>
               </td>
             </tr>

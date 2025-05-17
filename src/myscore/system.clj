@@ -12,17 +12,21 @@
    [monger.core :as mg]
    [monger.util :as mu]
    [myscore.db :as db]
+   [myscore.http-resp :as http-resp]
    [myscore.jwt :as jwt]
+   [myscore.specs :as specs]
    [ring.util.response :as response]))
 
 (def exception-handler
   (err/error-dispatch [context ex]
+    [{:exception-type :com.fasterxml.jackson.core.io.JsonEOFException}]
+    (assoc context :response (http-resp/handle-validation-error ex))
 
-                      [{:exception-type :com.fasterxml.jackson.core.io.JsonEOFException}]
-                      (assoc context :response {:status 400 :body {:error "Invalid JSON"}})
+    [{:exception-type :com.mongodb.MongoException}]
+    (assoc context :response (http-resp/handle-db-error ex))
 
-                      :else
-                      (assoc context :response {:status 500 :body (str ex)})))
+    :else
+    (assoc context :response (http-resp/server-error (str ex)))))
 
 ;; ----------------------------------------------------------------------------
 ;; Mongo Component
@@ -41,31 +45,6 @@
     (assoc this :conn nil :db nil)))
 
 ;; ----------------------------------------------------------------------------
-;; Data Specs
-;; ----------------------------------------------------------------------------
-
-(s/def ::name string?)
-(s/def ::expectation string?)
-(s/def ::metric (s/keys :req-un [::name ::expectation]))
-(s/def ::metrics (s/coll-of ::metric :min-count 1))
-(s/def ::email string?)
-(s/def ::create-config-params (s/keys :req-un [::name ::metrics ::email]))
-
-(s/def ::metricName string?)
-(s/def ::devScore (s/and number? #(<= 0 % 10)))
-(s/def ::mentorScore (s/and number? #(<= 0 % 10)))
-(s/def ::notes string?)
-(s/def ::score (s/keys :req-un [::metricName ::devScore ::mentorScore] :opt-un [::notes]))
-(s/def ::scores (s/coll-of ::score :min-count 1))
-(s/def ::configName string?)
-(s/def ::generalNotes string?)
-(s/def ::dateCreated string?)
-(s/def ::startDate string?)
-(s/def ::endDate string?)
-(s/def ::create-scorecard-params (s/keys :req-un [::configName ::email ::scores ::dateCreated ::startDate ::endDate] 
-                                         :opt-un [::generalNotes]))
-
-;; ----------------------------------------------------------------------------
 ;; Validation Interceptor
 ;; ----------------------------------------------------------------------------
 
@@ -74,11 +53,11 @@
    {:name ::validate-create-config
     :enter (fn [context]
              (let [params (get-in context [:request :json-params])]
-               (if (s/valid? ::create-config-params params)
+               (if (s/valid? ::specs/create-config-params params)
                  context
                  (assoc context :response
                         (-> (response/response {:error "Invalid config parameters"
-                                                :details (s/explain-data ::create-config-params params)})
+                                                :details (s/explain-data ::specs/create-config-params params)})
                             (response/status 400))))))}))
 
 (defn validate-create-scorecard []
@@ -86,11 +65,11 @@
    {:name ::validate-create-scorecard
     :enter (fn [context]
              (let [params (get-in context [:request :json-params])]
-               (if (s/valid? ::create-scorecard-params params)
+               (if (s/valid? ::specs/create-scorecard-params params)
                  context
                  (assoc context :response
                         (-> (response/response {:error "Invalid scorecard parameters"
-                                                :details (s/explain-data ::create-scorecard-params params)})
+                                                :details (s/explain-data ::specs/create-scorecard-params params)})
                             (response/status 400))))))}))
 
 ;; ----------------------------------------------------------------------------
@@ -99,31 +78,35 @@
 
 (defn create-config-handler [db]
   (fn [request]
-    (let [{:keys [name metrics email]} (:json-params request)
-          result (db/save-config db name metrics email)]
-      (if (contains? result :result)
-        {:status  200
-         :body    (json/generate-string {:result "saved" :message "Config created"})
-         :headers {"Content-Type" "application/json"}}
-        {:status  400
-         :body    (json/generate-string {:error (:error result)})
-         :headers {"Content-Type" "application/json"}}))))
+    (try
+      (let [{:keys [name metrics email]} (:json-params request)
+            result (db/save-config db name metrics email)]
+        (if (contains? result :result)
+          (http-resp/ok {:result "saved" :message "Config created"})
+          (http-resp/bad-request (:error result))))
+      (catch Exception e
+        (http-resp/handle-db-error e)))))
 
 (defn get-configs-handler [db]
   (fn [request]
-    (let [docs (mc/find-maps db "config" {:email (get-in request [:identity :email])})]
-      {:status  200
-       :body (->> docs
-                  (map #(dissoc % :_id))
-                  (json/generate-string))
-       :headers {"Content-Type" "application/json"}})))
+    (try
+      (let [docs (mc/find-maps db "config" {:email (get-in request [:identity :email])})]
+        (http-resp/ok (->> docs (map #(dissoc % :_id)))))
+      (catch Exception e
+        (http-resp/handle-db-error e)))))
 
 (defn get-scorecards-handler [db]
   (fn [request]
-    (let [docs (mc/find-maps db "scorecards" {:email (get-in request [:identity :email])})]
-      {:status  200
-       :body    (->> docs (map #(-> % (assoc :id (str (:_id %))) (dissoc :_id))) (json/generate-string))
-       :headers {"Content-Type" "application/json"}})))
+    (try
+      (let [docs (mc/find-maps db "scorecards" 
+                              {:email (get-in request [:identity :email])
+                               :archived {:$ne true}})]
+        (http-resp/ok (->> docs 
+                          (map #(-> % 
+                                   (assoc :id (str (:_id %))) 
+                                   (dissoc :_id))))))
+      (catch Exception e
+        (http-resp/handle-db-error e)))))
 
 ;; Helper function to find existing overlapping scorecards
 (defn find-overlapping-scorecard
@@ -136,54 +119,57 @@
 
 (defn create-scorecard-handler [db]
   (fn [request]
-    (let [scorecard-data (:json-params request)
-          email (:email scorecard-data)
-          start-date (:startDate scorecard-data)
-          end-date (:endDate scorecard-data)
-          existing (find-overlapping-scorecard db email start-date end-date)]
-      
-      (if existing
-        ;; Return error for overlap
-        {:status 400
-         :body (json/generate-string 
-                {:error (str "This time period overlaps with an existing scorecard. "
-                             "You already have a scorecard for " 
-                             (:startDate existing) " to " 
-                             (:endDate existing) ".")})
-         :headers {"Content-Type" "application/json"}}
+    (try
+      (let [scorecard-data (:json-params request)
+            email (:email scorecard-data)
+            start-date (:startDate scorecard-data)
+            end-date (:endDate scorecard-data)
+            existing (find-overlapping-scorecard db email start-date end-date)]
         
-        ;; No overlap, create new scorecard
-        (let [id (mu/object-id)
-              document (assoc scorecard-data :_id id)
-              result (try
-                       (mc/insert db "scorecards" document)
-                       {:result "saved" :id (str id)}
-                       (catch Exception e
-                         {:error (.getMessage e)}))]
-          (if (contains? result :result)
-            {:status 200
-             :body (json/generate-string result)
-             :headers {"Content-Type" "application/json"}}
-            {:status 400
-             :body (json/generate-string {:error (:error result)})
-             :headers {"Content-Type" "application/json"}}))))))
+        (if existing
+          (http-resp/bad-request 
+           (str "This time period overlaps with an existing scorecard. "
+                "You already have a scorecard for " 
+                (:startDate existing) " to " 
+                (:endDate existing) "."))
+          
+          (let [id (mu/object-id)
+                document (assoc scorecard-data :_id id)]
+            (try
+              (mc/insert db "scorecards" document)
+              (http-resp/ok {:result "saved" :id (str id)})
+              (catch Exception e
+                (http-resp/handle-db-error e))))))
+      (catch Exception e
+        (http-resp/handle-validation-error e)))))
 
 (defn get-scorecard-handler [db]
   (fn [request]
     (let [id (get-in request [:path-params :id])]
-      (try
-        (let [doc (mc/find-map-by-id db "scorecards" (mu/object-id id))]
-          (if doc
-            {:status 200
-             :body (json/generate-string (-> doc (assoc :id (str (:_id doc))) (dissoc :_id)))
-             :headers {"Content-Type" "application/json"}}
-            {:status 404
-             :body (json/generate-string {:error "Scorecard not found"})
-             :headers {"Content-Type" "application/json"}}))
-        (catch Exception _
-          {:status 400
-           :body (json/generate-string {:error "Invalid id"})
-           :headers {"Content-Type" "application/json"}})))))
+      (if-let [id-error (http-resp/handle-id-error id)]
+        id-error
+        (try
+          (let [doc (mc/find-map-by-id db "scorecards" (mu/object-id id))]
+            (if doc
+              (http-resp/ok (-> doc (assoc :id (str (:_id doc))) (dissoc :_id)))
+              (http-resp/not-found "Scorecard not found")))
+          (catch Exception e
+            (http-resp/handle-db-error e)))))))
+
+(defn archive-scorecard-handler [db]
+  (fn [request]
+    (let [id (get-in request [:path-params :id])]
+      (if-let [id-error (http-resp/handle-id-error id)]
+        id-error
+        (try
+          (let [result (mc/update-by-id db "scorecards" 
+                                       (mu/object-id id)
+                                       {:$set {:archived true}})]
+            (if (pos? (get result "nModified" 0))
+              (http-resp/ok {:result "archived"})
+              (http-resp/not-found "Scorecard not found")))
+          (catch Exception e
+            (http-resp/handle-db-error e)))))))
 
 (defn health-handler []
   (fn [_]
@@ -211,6 +197,10 @@
      ["/scorecards/:id" :get
       [jwt/auth-interceptor exception-handler (get-scorecard-handler db)]
       :route-name :scorecard-get]
+
+     ["/scorecards/:id/archive" :post
+      [jwt/auth-interceptor exception-handler (archive-scorecard-handler db)]
+      :route-name :scorecard-archive]
 
      ["/health" :get
       [(health-handler)]
