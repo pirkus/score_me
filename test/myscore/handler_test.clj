@@ -36,6 +36,7 @@
         {:keys [db]} (mg/connect-via-uri uri)]
     ; Clear the collection before each test
     (mc/drop db "config")
+    (mc/drop db "scorecards")
     db))
 
 (deftest create-config-handler-test
@@ -215,3 +216,22 @@
             response (handler request)]
         (is (= 200 (:status response)))
         (is (contains? (json/parse-string (:body response) true) :id))))))
+
+(deftest get-scorecards-handler-test
+  (let [db (fresh-db)
+        handler (system/get-scorecards-handler db)
+        test-email "test@example.com"]
+    ;; Seed DB with three scorecards, two for test-email and one for another user
+    (doseq [sc [{:email test-email :configName "Config A" :startDate "2023-07-01" :endDate "2023-07-31"}
+                 {:email test-email :configName "Config B" :startDate "2023-08-01" :endDate "2023-08-31"}
+                 {:email "other@example.com" :configName "Other" :startDate "2023-07-01" :endDate "2023-07-31"}]]
+      (mc/insert db "scorecards" sc))
+
+    (testing "Retrieving scorecards for authenticated user"
+      (let [request {:identity {:email test-email}}
+            response (handler request)
+            body (json/parse-string (:body response) true)]
+        (is (= 200 (:status response)))
+        (is (= 2 (count body)))
+        (is (= #{"Config A" "Config B"}
+               (set (map :configName body))))))))
