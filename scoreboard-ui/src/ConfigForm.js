@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from "react";
 import useTokenExpiryCheck from "./useTokenExpiryCheck";
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const ConfigForm = ({ user, setUser }) => {
   const [name, setName] = useState("");
   const [metrics, setMetrics] = useState([{ name: "", expectation: "" }]);
@@ -45,7 +47,7 @@ const ConfigForm = ({ user, setUser }) => {
       const config = { name, metrics, email: user.decoded.email };
 
       try {
-        const res = await fetch("http://localhost:8080/scoreboard-config", {
+        const res = await fetch(`${API_URL}/scoreboard-config`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

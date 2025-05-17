@@ -312,10 +312,23 @@ p {
 }
 
 .success-message {
-  color: #4caf50;
-  text-align: center;
-  margin: 10px 0;
+  background-color: #dff2d8;
+  color: #3c763d;
+  padding: 12px 15px;
+  margin: 15px 0;
+  border-radius: 4px;
+  border-left: 5px solid #4caf50;
   font-weight: bold;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: fadeInOut 4s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
 }
 
 .main-message { /* This was used in ConfigForm for non-success messages */

@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useTokenExpiryCheck from './useTokenExpiryCheck';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const CreateScorecard = ({ user, setUser, configs }) => {
   useTokenExpiryCheck(user, setUser);
 
@@ -133,7 +135,7 @@ const CreateScorecard = ({ user, setUser, configs }) => {
     };
 
     try {
-      const res = await fetch("http://localhost:8080/create-scoreboard", {
+      const res = await fetch(`${API_URL}/create-scoreboard`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

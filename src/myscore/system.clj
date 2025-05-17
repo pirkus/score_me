@@ -15,7 +15,8 @@
    [myscore.http-resp :as http-resp]
    [myscore.jwt :as jwt]
    [myscore.specs :as specs]
-   [ring.util.response :as response]))
+   [ring.util.response :as response]
+   [clojure.tools.logging :as log]))
 
 (def exception-handler
   (err/error-dispatch [context ex]
@@ -162,11 +163,11 @@
       (if-let [id-error (http-resp/handle-id-error id)]
         id-error
         (try
-          (let [result (mc/update-by-id db "scorecards" 
-                                       (mu/object-id id)
-                                       {:$set {:archived true}})]
-            (if (pos? (get result "nModified" 0))
-              (http-resp/ok {:result "archived"})
+          (let [oid (mu/object-id id)
+                result (mc/update-by-id db "scorecards" oid {:$set {:archived true}})
+                n (.getN result)]
+            (if (pos? n)
+              (http-resp/ok {:result "archived" :id id})
               (http-resp/not-found "Scorecard not found")))
           (catch Exception e
             (http-resp/handle-db-error e)))))))
@@ -200,7 +201,7 @@
 
      ["/scorecards/:id/archive" :post
       [jwt/auth-interceptor exception-handler (archive-scorecard-handler db)]
-      :route-name :scorecard-archive]
+      :route-name :scorecards-archive]
 
      ["/health" :get
       [(health-handler)]
