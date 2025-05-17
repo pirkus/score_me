@@ -118,6 +118,13 @@
                   (json/generate-string))
        :headers {"Content-Type" "application/json"}})))
 
+(defn get-scorecards-handler [db]
+  (fn [request]
+    (let [docs (mc/find-maps db "scorecards" {:email (get-in request [:identity :email])})]
+      {:status  200
+       :body    (->> docs (map #(-> % (assoc :id (str (:_id %))) (dissoc :_id))) (json/generate-string))
+       :headers {"Content-Type" "application/json"}})))
+
 ;; Helper function to find existing overlapping scorecards
 (defn find-overlapping-scorecard
   "Find any scorecard for the same user that overlaps with the given date range"
@@ -161,6 +168,28 @@
              :body (json/generate-string {:error (:error result)})
              :headers {"Content-Type" "application/json"}}))))))
 
+(defn get-scorecard-handler [db]
+  (fn [request]
+    (let [id (get-in request [:path-params :id])]
+      (try
+        (let [doc (mc/find-map-by-id db "scorecards" (mu/object-id id))]
+          (if doc
+            {:status 200
+             :body (json/generate-string (-> doc (assoc :id (str (:_id doc))) (dissoc :_id)))
+             :headers {"Content-Type" "application/json"}}
+            {:status 404
+             :body (json/generate-string {:error "Scorecard not found"})
+             :headers {"Content-Type" "application/json"}}))
+        (catch Exception _
+          {:status 400
+           :body (json/generate-string {:error "Invalid id"})
+           :headers {"Content-Type" "application/json"}})))))
+
+(defn health-handler []
+  (fn [_]
+    {:status 200
+     :body   "OK"}))
+
 (defn make-routes [db]
   (route/expand-routes
    #{["/scoreboard-config" :post
@@ -173,7 +202,19 @@
       
      ["/create-scoreboard" :post
       [jwt/auth-interceptor exception-handler (body-params) (validate-create-scorecard) (create-scorecard-handler db)]
-      :route-name :scorecard-create]}))
+      :route-name :scorecard-create]
+
+     ["/scorecards" :get
+      [jwt/auth-interceptor exception-handler (get-scorecards-handler db)]
+      :route-name :scorecards-get]
+
+     ["/scorecards/:id" :get
+      [jwt/auth-interceptor exception-handler (get-scorecard-handler db)]
+      :route-name :scorecard-get]
+
+     ["/health" :get
+      [(health-handler)]
+      :route-name :health]}))
 
 (defn make-server [port routes]
   (-> {::http/routes routes
