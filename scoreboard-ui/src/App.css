@@ -769,3 +769,31 @@ p {
     font-size: 0.93em;
   }
 }
+
+.display-options {
+  margin: 15px 0;
+  text-align: left;
+}
+
+.archive-checkbox {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.archive-checkbox input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.archived-row {
+  background-color: #f8f8f8 !important;
+  color: #777;
+  font-style: italic;
+}
+
+.archived-row td {
+  opacity: 0.8;
+}

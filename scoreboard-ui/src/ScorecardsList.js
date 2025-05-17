@@ -7,6 +7,7 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (!user || !user.token) {
@@ -14,8 +15,10 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
     }
 
     const fetchScorecards = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/scorecards`, {
+        const url = `${API_URL}/scorecards${showArchived ? '?includeArchived=true' : ''}`;
+        const res = await fetch(url, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         if (!res.ok) {
@@ -32,7 +35,7 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
     };
 
     fetchScorecards();
-  }, [user]);
+  }, [user, showArchived]);
 
   const handleArchive = async (id) => {
     try {
@@ -55,8 +58,15 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
       // Even if the response has an error, still remove from UI for better UX
       // The backend will try to archive it
 
-      // Remove the archived scorecard from the list
-      setScorecards(prevScorecards => prevScorecards.filter(sc => sc.id !== id));
+      // If not showing archived scorecards, remove from list
+      if (!showArchived) {
+        setScorecards(prevScorecards => prevScorecards.filter(sc => sc.id !== id));
+      } else {
+        // Otherwise, mark it as archived in the UI
+        setScorecards(prevScorecards => 
+          prevScorecards.map(sc => sc.id === id ? {...sc, archived: true} : sc)
+        );
+      }
       
       // Set a more descriptive success message
       setMessage(`${scorecardName} has been archived successfully!`);
@@ -76,6 +86,16 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
   return (
     <div className="scorecards-list">
       <h2>Your Scorecards</h2>
+      <div className="display-options">
+        <label className="archive-checkbox">
+          <input 
+            type="checkbox" 
+            checked={showArchived} 
+            onChange={(e) => setShowArchived(e.target.checked)} 
+          />
+          Show archived scorecards
+        </label>
+      </div>
       {message && <p className="success-message">{message}</p>}
       <table className="scorecard-table">
         <thead>
@@ -84,16 +104,18 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
             <th>Date Range</th>
             <th>Date Created</th>
             <th>General Notes</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {scorecards.map((sc, idx) => (
-            <tr key={idx}>
+            <tr key={idx} className={sc.archived ? 'archived-row' : ''}>
               <td data-label="Config Name">{sc.configName}</td>
               <td data-label="Date Range">{sc.startDate} - {sc.endDate}</td>
               <td data-label="Date Created">{sc.dateCreated?.split('T')[0]}</td>
               <td data-label="General Notes">{sc.generalNotes || '—'}</td>
+              <td data-label="Status">{sc.archived ? 'Archived' : 'Active'}</td>
               <td data-label="Actions">
                 <button 
                   onClick={(e) => {
@@ -105,16 +127,18 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
                 >
                   👁️
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent event bubbling
-                    handleArchive(sc.id);
-                  }}
-                  className="archive-button"
-                  title="Archive Scorecard"
-                >
-                  📦 Archive
-                </button>
+                {!sc.archived && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent event bubbling
+                      handleArchive(sc.id);
+                    }}
+                    className="archive-button"
+                    title="Archive Scorecard"
+                  >
+                    📦 Archive
+                  </button>
+                )}
               </td>
             </tr>
           ))}

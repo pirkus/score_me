@@ -99,9 +99,10 @@
 (defn get-scorecards-handler [db]
   (fn [request]
     (try
-      (let [docs (mc/find-maps db "scorecards" 
-                              {:email (get-in request [:identity :email])
-                               :archived {:$ne true}})]
+      (let [include-archived (= "true" (get-in request [:query-params "includeArchived"]))
+            query (cond-> {:email (get-in request [:identity :email])}
+                    (not include-archived) (assoc :archived {:$ne true}))
+            docs (mc/find-maps db "scorecards" query)]
         (http-resp/ok (->> docs 
                           (map #(-> % 
                                    (assoc :id (str (:_id %))) 

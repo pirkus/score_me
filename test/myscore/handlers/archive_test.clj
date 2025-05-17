@@ -107,4 +107,83 @@
             body (json/parse-string (:body response) true)]
         (is (= 200 (:status response)))
         (is (= 1 (count body)))
-        (is (= "Config B" (:configName (first body)))))))) 
+        (is (= "Config B" (:configName (first body))))))))
+
+(deftest include-archived-scorecards-test
+  (let [db (fresh-db)
+        get-handler (system/get-scorecards-handler db)
+        
+        ;; Insert test scorecards
+        id1 (mu/object-id)
+        id2 (mu/object-id)
+        id3 (mu/object-id)
+        email "test@example.com"
+        
+        ;; Active scorecard
+        scorecard1 {:_id id1
+                   :configName "Active Config"
+                   :email email
+                   :scores [{:metricName "M1", :devScore 8, :mentorScore 9}]
+                   :startDate "2023-07-01"
+                   :endDate "2023-07-31"
+                   :dateCreated "2023-07-01T12:00:00Z"
+                   :archived false}
+        
+        ;; Archived scorecard
+        scorecard2 {:_id id2
+                   :configName "Archived Config 1" 
+                   :email email
+                   :scores [{:metricName "M1", :devScore 7, :mentorScore 8}]
+                   :startDate "2023-06-01"
+                   :endDate "2023-06-30"
+                   :dateCreated "2023-06-01T12:00:00Z"
+                   :archived true}
+        
+        ;; Another archived scorecard
+        scorecard3 {:_id id3
+                    :configName "Archived Config 2" 
+                    :email email
+                    :scores [{:metricName "M1", :devScore 6, :mentorScore 7}]
+                    :startDate "2023-05-01"
+                    :endDate "2023-05-31"
+                    :dateCreated "2023-05-01T12:00:00Z"
+                    :archived true}]
+    
+    ;; Insert test data
+    (mc/insert-batch db "scorecards" [scorecard1 scorecard2 scorecard3])
+    
+    (testing "Only non-archived scorecards are returned by default"
+      (let [request {:identity {:email email}}
+            response (get-handler request)
+            body (json/parse-string (:body response) true)]
+        (is (= 200 (:status response)))
+        (is (= 1 (count body)))
+        (is (= "Active Config" (:configName (first body))))))
+    
+    (testing "All scorecards are returned when includeArchived is true"
+      (let [request {:identity {:email email}
+                     :query-params {"includeArchived" "true"}}
+            response (get-handler request)
+            body (json/parse-string (:body response) true)]
+        (is (= 200 (:status response)))
+        (is (= 3 (count body)))
+        (is (= #{"Active Config" "Archived Config 1" "Archived Config 2"} 
+               (set (map :configName body))))))
+    
+    (testing "includeArchived must be exactly 'true' to include archived scorecards"
+      (let [request {:identity {:email email}
+                     :query-params {"includeArchived" "yes"}}
+            response (get-handler request)
+            body (json/parse-string (:body response) true)]
+        (is (= 200 (:status response)))
+        (is (= 1 (count body)))
+        (is (= "Active Config" (:configName (first body))))))
+    
+    (testing "Other user's scorecards are not returned"
+      (let [other-email "other@example.com"
+            request {:identity {:email other-email}
+                     :query-params {"includeArchived" "true"}}
+            response (get-handler request)
+            body (json/parse-string (:body response) true)]
+        (is (= 200 (:status response)))
+        (is (= 0 (count body))))))) 
