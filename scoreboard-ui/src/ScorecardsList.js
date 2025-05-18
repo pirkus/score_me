@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-const ScorecardsList = ({ user, onViewScorecard }) => {
+const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
   const [scorecards, setScorecards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -132,16 +132,28 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
                     👁️
                   </button>
                   {!sc.archived && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent event bubbling
-                        handleArchive(sc.id);
-                      }}
-                      className="archive-button"
-                      title="Archive Scorecard"
-                    >
-                      📦 Archive
-                    </button>
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          onEditScorecard(sc.id);
+                        }}
+                        className="edit-button"
+                        title="Edit Scorecard"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent event bubbling
+                          handleArchive(sc.id);
+                        }}
+                        className="archive-button"
+                        title="Archive Scorecard"
+                      >
+                        📦 Archive
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

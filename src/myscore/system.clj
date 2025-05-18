@@ -127,17 +127,36 @@
                               :endDate {:$gte start-date}}]}))
 
 (defn validate-score-types [config scores]
-  (let [metric-types (into {} (map (fn [m] [(:name m) (:scoreType m)]) (:metrics config)))]
-    (every? (fn [score]
-              (let [metric-name (:metricName score)
-                    metric-type (get metric-types metric-name)
-                    dev-score (:devScore score)
-                    mentor-score (:mentorScore score)]
-                (case metric-type
-                  "numeric" (and (number? dev-score) (number? mentor-score))
-                  "checkbox" (and (boolean? dev-score) (boolean? mentor-score))
-                  false)))
-            scores)))
+  (if (or (nil? config) (nil? scores) (empty? scores))
+    false
+    (let [metric-types (into {} (map (fn [m] [(:name m) (or (:scoreType m) "numeric")]) (:metrics config)))]
+      (try
+        (every? (fn [score]
+                  (let [metric-name (:metricName score)
+                        metric-type (get metric-types metric-name)
+                        dev-score (:devScore score)
+                        mentor-score (:mentorScore score)]
+                    (if (nil? metric-type)
+                      false  ;; Metric name not found in config
+                      (case metric-type
+                        "numeric" (and (number? dev-score) (number? mentor-score)
+                                      (<= 0 dev-score 10) (<= 0 mentor-score 10))
+                        "checkbox" (and (boolean? dev-score) (boolean? mentor-score))
+                        false))))  ;; Unknown score type
+                scores)
+        (catch Exception e
+          (println "Error validating scores:" (.getMessage e))
+          false)))))
+
+(defn valid-date? [date-str]
+  (try
+    (when (and date-str (string? date-str))
+      (let [parts (clojure.string/split date-str #"-")]
+        (and
+         (= 3 (count parts))
+         (every? #(re-matches #"^\d+$" %) parts))))
+    (catch Exception _
+      false)))
 
 (defn create-scorecard-handler [db]
   (fn [request]
@@ -147,33 +166,82 @@
             start-date (:startDate scorecard-data)
             end-date (:endDate scorecard-data)
             config-name (:configName scorecard-data)
+            is-update (contains? scorecard-data :_id)
             config (mc/find-one-as-map db "config" {:name config-name :email email})]
         
-        (if (nil? config)
-          (http-resp/bad-request "Configuration not found")
-          (if (not (validate-score-types config (:scores scorecard-data)))
-            (http-resp/bad-request "Invalid score types for metrics")
-            (let [existing (find-overlapping-scorecard db email config-name start-date end-date)]
-              (if (and existing (not= (str (:_id existing)) (:_id scorecard-data)))
-                (http-resp/bad-request 
-                 (str "This time period overlaps with an existing scorecard. "
-                      "You already have a scorecard for " 
-                      (:startDate existing) " to " 
-                      (:endDate existing) "."))
+        (println "Processing scorecard request for:" email "config:" config-name "isUpdate:" is-update)
+        
+        ;; Check if the config exists
+        (cond
+          ;; Config not found
+          (nil? config)
+          (do
+            (println "Configuration not found for" config-name "and email" email)
+            (http-resp/bad-request "Configuration not found"))
+          
+          ;; Email is missing
+          (not email)
+          (http-resp/bad-request "Email is required")
+          
+          ;; Invalid start date format
+          (not (valid-date? start-date))
+          (http-resp/bad-request "Invalid start date format")
+          
+          ;; Invalid end date format
+          (not (valid-date? end-date)) 
+          (http-resp/bad-request "Invalid end date format")
+          
+          ;; Empty scores or invalid score types/values
+          (not (validate-score-types config (:scores scorecard-data)))
+          (do
+            (println "Invalid scores for" email "- config:" config-name 
+                     "scores:" (pr-str (:scores scorecard-data)))
+            (http-resp/bad-request "Invalid scores - check scores array, types, and ranges (0-10)"))
+          
+          ;; Updating but scorecard not found or belongs to another user
+          (and is-update 
+               (or (nil? (mc/find-map-by-id db "scorecards" (mu/object-id (:_id scorecard-data))))
+                   (not= email (:email (mc/find-map-by-id db "scorecards" (mu/object-id (:_id scorecard-data)))))))
+          (http-resp/bad-request "Scorecard not found or does not belong to you")
+          
+          :else
+          (let [existing (find-overlapping-scorecard db email config-name start-date end-date)]
+            (if (and existing (not= (str (:_id existing)) (:_id scorecard-data)))
+              ;; Overlapping date range
+              (http-resp/bad-request 
+               (str "This time period overlaps with an existing scorecard. "
+                    "You already have a scorecard for " 
+                    (:startDate existing) " to " 
+                    (:endDate existing) "."))
+              
+              ;; All checks passed, proceed with update/insert
+              (let [id (or (:_id scorecard-data) (mu/object-id))
+                    oid (if (string? id) (mu/object-id id) id)
+                    
+                    ;; If updating, get existing doc for archived status
+                    existing-doc (when is-update (mc/find-map-by-id db "scorecards" oid))
+                    
+                    ;; Preserve archived status in updates if it exists
+                    preserved-archived (when (and is-update (:archived existing-doc))
+                                         {:archived (:archived existing-doc)})
+                    
+                    ;; Merge everything
+                    document (-> scorecard-data
+                                 (assoc :_id oid)
+                                 (dissoc :id)
+                                 (merge preserved-archived))]
                 
-                (let [id (or (:_id scorecard-data) (mu/object-id))
-                      oid (if (string? id) (mu/object-id id) id)
-                      document (-> scorecard-data
-                                   (assoc :_id oid)
-                                   (dissoc :id))]
-                  (try
-                    (if (:_id scorecard-data)
-                      (mc/update-by-id db "scorecards" oid document)
-                      (mc/insert db "scorecards" document))
-                    (http-resp/ok {:result "saved" :id (str oid)})
-                    (catch Exception e
-                      (http-resp/handle-db-error e)))))))))
+                (try
+                  (println "Saving scorecard for" email "- id:" (str oid))
+                  (if is-update
+                    (mc/update-by-id db "scorecards" oid document)
+                    (mc/insert db "scorecards" document))
+                  (http-resp/ok {:result "saved" :id (str oid)})
+                  (catch Exception e
+                    (println "Database error:" (.getMessage e))
+                    (http-resp/handle-db-error e))))))))
       (catch Exception e
+        (println "Validation error:" (.getMessage e))
         (http-resp/handle-validation-error e)))))
 
 (defn get-scorecard-handler [db]

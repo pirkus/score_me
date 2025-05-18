@@ -37,8 +37,22 @@ textarea { /* Added textarea here for general consistency */
   font-size: 1em;
   outline: none;
   box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+input[type="date"] {
+  appearance: none;
+  padding: 10px;
+  color: #333;
+  background-color: #fff;
+}
 
 button {
   padding: 12px 20px;
@@ -50,6 +64,7 @@ button {
   transition: background-color 0.3s ease;
   margin-top: 10px;
   margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .button-container { /* This was for menu buttons in App.js primarily */
@@ -248,53 +263,45 @@ p {
 /* Inputs within metric-inputs, not all inputs in config-form */
 .metric-inputs input[type="text"] {
   flex-grow: 1;
-  margin: 0; /* Override general input margin */
-  min-width: 0;
 }
 
 .remove-metric-button {
-  padding: 0;
-  font-size: 1.5em;
-  color: #f44336;
+  background-color: #f44336; /* Red */
+  color: white;
   border: none;
-  border-radius: 0;
-  transition: none;
-  background-color: transparent;
-  margin-left: 10px;
-  width: auto;
-  height: auto;
-  display: inline-flex;
-  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  font-size: 1em;
+  display: flex;
   align-items: center;
-  text-align: center;
-  line-height: 1;
-  font-weight: normal;
-  flex-shrink: 0;
+  justify-content: center;
+  margin-top: 10px;
+  margin-left: auto; /* Push it to the right */
+  padding: 0;
+  min-width: 30px; /* Ensures it doesn't grow */
 }
 
 .remove-metric-button:hover {
-  background-color: transparent; /* Keep transparent on hover */
-  /* color: #d32f2f; /* Optional: darken color on hover */
+  background-color: #d32f2f;
 }
 
 .config-form .add-metric-button {
-  background-color: #ff9800; /* Orange */
+  background-color: #2196F3; /* Blue */
   width: 100%;
-  display: block;
 }
 
 .config-form .add-metric-button:hover {
-  background-color: #f57c00;
+  background-color: #1976D2;
 }
 
 .config-form .submit-button {
-  background-color: #5cb85c; /* Green */
-  width: 100%;
-  display: block;
+  background-color: #4caf50; /* Green */
 }
 
 .config-form .submit-button:hover {
-  background-color: #51a351;
+  background-color: #45a049;
 }
 
 .error-message { /* General error message style */
@@ -336,201 +343,271 @@ p {
 }
 
 
-/* === Styles previously in CreateScorecard.css === */
+/* === CreateOrEditScorecard Component Styles === */
 
-.create-scorecard-form {
-  /* This class is used on a .form-container div */
-  /* Overrides for width from the base .form-container */
-  width: 80%;
+.create-scorecard {
+  width: 90%;
   max-width: 900px;
-  /* margin: 20px auto; /* Already in .form-container */
+  margin: 20px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.create-scorecard-form h2 {
+.create-scorecard h2 {
   text-align: center;
   margin-bottom: 25px;
-  color: #4caf50; /* Match theme */
-  font-size: 2.2em; /* Slightly smaller than config form H2 */
+  color: #4caf50;
+  font-size: 2.2em;
+  font-weight: 600;
 }
 
-.create-scorecard-form .form-group { /* Used for grouping label + select/textarea */
-  margin-bottom: 20px;
+.create-scorecard .form-group {
+  margin-bottom: 25px;
 }
 
-.create-scorecard-form label { /* Specific label styling if needed, or rely on general if identical */
+.create-scorecard label {
   display: block;
   margin-bottom: 8px;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
+  font-size: 1.05em;
 }
 
-/* Specific styling for select and general-notes textarea within create-scorecard-form */
-.create-scorecard-form select,
-.create-scorecard-form textarea#general-notes {
+.create-scorecard select,
+.create-scorecard textarea,
+.create-scorecard input[type="date"] {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 6px;
   box-sizing: border-box;
   font-size: 1em;
-  /* margin: 0; /* Reset margin if it was set by general input/textarea styles and not desired */
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
 }
 
-.create-scorecard-form select {
-  appearance: none; /* For custom arrow if desired, or leave default */
-  background-color: #fff; /* Ensure select background is white */
+.create-scorecard select:focus,
+.create-scorecard textarea:focus,
+.create-scorecard input[type="date"]:focus {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  outline: none;
 }
 
-.scorecard-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  font-size: 0.95em;
-}
-
-.scorecard-table th,
-.scorecard-table td {
-  border: 1px solid #ddd;
-  padding: 10px 12px;
-  text-align: left;
-  vertical-align: top;
-}
-
-.scorecard-table th {
-  background-color: #f2f2f2;
-  font-weight: bold;
-  color: #333;
-}
-
-/* Inputs and textareas within the scorecard table */
-.scorecard-table input[type="number"],
-.scorecard-table textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  font-size: 1em;
-  margin: 0; /* Override general input/textarea margin if set */
-}
-
-.scorecard-table textarea {
-  min-height: 50px;
+.create-scorecard textarea {
+  min-height: 100px;
   resize: vertical;
 }
 
-.scorecard-table input[type="number"] {
-  max-width: 120px; /* Constrain width of number inputs in table */
+.create-scorecard input[type="date"] {
+  color: #333;
 }
 
-/* Error messages within the table, more specific than general .error-message */
-.scorecard-table .error-message.small {
-  font-size: 0.75em;
-  color: darkorange; /* Consistent error color */
-  margin-top: 3px;
-  display: block; /* Ensure it takes its own line */
-  /* text-align: left; /* Align with table cell content */
+.date-range-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.create-scorecard-form .submit-button {
-  background-color: #007bff; /* Blue for scorecard submission */
-  color: white;
+.date-range-container .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.message-container {
+  background-color: #dff2d8;
+  color: #3c763d;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.scores-container {
+  margin-top: 30px;
+}
+
+.scores-container h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 2px solid #eaeaea;
+  padding-bottom: 10px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.scores-table {
   width: 100%;
-  padding: 12px; /* Slightly different padding perhaps */
-  font-size: 1.1em;
-  /* border: none; /* From general button style */
-  /* border-radius: 5px; /* From general button style */
-  /* margin-top: 10px; /* From general button style, adjust if needed */
+  border-collapse: collapse;
+  margin-top: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.create-scorecard-form .submit-button:hover {
-  background-color: #0056b3;
+.scores-table th {
+  background-color: #f5f5f5;
+  color: #333;
+  font-weight: 600;
+  padding: 15px;
+  text-align: left;
+  border-bottom: 2px solid #e0e0e0;
 }
 
-/* Specific message styling for CreateScorecard form */
-.create-scorecard-form .main-error-message { /* For major form-level errors */
-  color: #dc3545; /* Bootstrap danger color */
-  font-weight: bold;
-  margin-top: 15px;
+.scores-table td {
+  padding: 15px;
+  border-bottom: 1px solid #eaeaea;
+  vertical-align: middle;
+}
+
+.scores-table tr:last-child td {
+  border-bottom: none;
+}
+
+.scores-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.scores-table .score-input {
+  width: 100%;
+  max-width: 100px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.95em;
   text-align: center;
 }
 
-.create-scorecard-form .success-message { /* Overrides general .success-message if more specific styling is needed */
-  /* color: green; /* From general .success-message */
-  /* font-weight: bold; /* From general .success-message */
-  /* margin-top: 15px; /* Slightly different from general .success-message */
-  text-align: center; /* Specific to scorecard messages */
+.scores-table textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 0.95em;
 }
 
+.scores-table .checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
 
-/* Responsive table styles (from CreateScorecard.css) */
+.scores-table .checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.submit-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 15px 30px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+}
+
+.submit-button:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.error-input {
+  border-color: darkorange !important;
+}
+
+.error-message {
+  color: darkorange;
+  font-size: 0.85em;
+  margin-top: 5px;
+}
+
+.date-range-error {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Responsive styles */
 @media (max-width: 768px) {
-  .create-scorecard-form { /* Further adjust width for small screens */
+  .create-scorecard {
     width: 95%;
+    padding: 20px;
   }
-
-  .scorecard-table,
-  .scorecard-table thead,
-  .scorecard-table tbody,
-  .scorecard-table th,
-  .scorecard-table td,
-  .scorecard-table tr {
+  
+  .date-range-container {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .scores-table {
     display: block;
   }
-
-  .scorecard-table thead tr { /* Hide table headers visually but keep them accessible */
+  
+  .scores-table thead,
+  .scores-table tbody,
+  .scores-table th,
+  .scores-table td,
+  .scores-table tr {
+    display: block;
+  }
+  
+  .scores-table thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
-
-  .scorecard-table tr {
+  
+  .scores-table tr {
     border: 1px solid #ccc;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    overflow: hidden;
   }
-
-  .scorecard-table td {
+  
+  .scores-table td {
     border: none;
     border-bottom: 1px solid #eee;
     position: relative;
-    padding-left: 50%; /* Make space for the data-label */
-    text-align: right; /* Align cell content to the right */
-    white-space: normal; /* Allow content to wrap */
-    min-height: 30px; /* Ensure cells have some height */
-    display: flex;
-    align-items: center; /* Vertically align label and input/textarea */
-    justify-content: flex-end; /* Push content to the right */
+    padding-left: 50%;
+    text-align: right;
   }
-
-  .scorecard-table td::before { /* This acts as the new "header" for each cell */
-    content: attr(data-label); /* Use the data-label attribute from the td */
+  
+  .scores-table td:before {
     position: absolute;
-    left: 10px;
-    width: calc(50% - 20px); /* Adjust width to fit on the left */
+    top: 15px;
+    left: 15px;
+    width: 45%;
     padding-right: 10px;
+    white-space: nowrap;
     font-weight: bold;
-    text-align: left; /* Align the label text to the left */
-    white-space: normal;
+    content: attr(data-label);
+    text-align: left;
   }
-
-  .scorecard-table input[type="number"],
-  .scorecard-table textarea {
-    max-width: none; /* Allow inputs to take full available width on the right */
-    /* margin-left: auto; /* Pushes the input to the right in the flex container */
-    width: auto; /* Let flexbox determine width for inputs */
-    flex-grow: 1; /* Allow input to take available space */
-  }
-   .scorecard-table td textarea {
-     width: 100%; /* Ensure textarea uses its flex space fully */
-  }
-
-
-  /* Error messages in responsive table */
-  .scorecard-table .error-message.small {
-    text-align: right; /* Align with input */
-    width: 100%; /* Take full width of its container (the input's parent td part) */
-    padding-left: 0; /* Adjust if needed due to parent padding */
+  
+  .scores-table .score-input {
+    max-width: 100%;
   }
 }
 
@@ -708,7 +785,8 @@ p {
 
 /* Modern action buttons - improved visibility */
 .view-button,
-.archive-button {
+.archive-button,
+.edit-button {
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -734,6 +812,17 @@ p {
   color: #fff;
   transform: translateY(-2px) scale(1.10);
   box-shadow: 0 4px 12px rgba(67, 233, 123, 0.18);
+}
+
+.edit-button {
+  background: linear-gradient(90deg, #6a3093 0%, #a044ff 100%);
+}
+
+.edit-button:hover {
+  background: linear-gradient(90deg, #a044ff 0%, #6a3093 100%);
+  color: #fff;
+  transform: translateY(-2px) scale(1.10);
+  box-shadow: 0 4px 12px rgba(160, 68, 255, 0.18);
 }
 
 .archive-button {

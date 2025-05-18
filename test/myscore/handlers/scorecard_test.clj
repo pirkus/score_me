@@ -1,6 +1,6 @@
 (ns myscore.handlers.scorecard-test
   (:require
-    [clojure.test :refer [deftest is testing]]
+    [clojure.test :refer [deftest is]]
     [cheshire.core :as json]
     [myscore.system :as system]
     [monger.collection :as mc]

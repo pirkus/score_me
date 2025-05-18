@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import ConfigForm from './ConfigForm';
-import CreateScorecard from './CreateScorecard'
+import CreateOrEditScorecard from './CreateOrEditScorecard'
 import ScorecardsList from './ScorecardsList'
 import ViewScorecard from './ViewScorecard'
 import useTokenExpiryCheck from "./useTokenExpiryCheck";
@@ -17,6 +17,7 @@ const App = () => {
   const [configs, setConfigs] = useState([]);
   const [selectedConfig, setSelectedConfig] = useState(null);
   const [selectedScorecardId, setSelectedScorecardId] = useState(null);
+  const [scorecardToEdit, setScorecardToEdit] = useState(null);
 
   // Check for token expiration every time the user state is updated
   useTokenExpiryCheck(user, setUser);
@@ -58,11 +59,31 @@ const App = () => {
   const handleMenuSelect = (view) => {
     setCurrentView(view);
     setSelectedScorecardId(null);
+    setScorecardToEdit(null);
   };
 
   const handleViewScorecard = (scorecardId) => {
     setSelectedScorecardId(scorecardId);
     setCurrentView('view-scorecard');
+  };
+
+  const handleEditScorecard = async (scorecardId) => {
+    if (user && user.token) {
+      try {
+        const res = await fetch(`${API_URL}/scorecards/${scorecardId}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setScorecardToEdit(data);
+          setCurrentView('edit-scorecard');
+        } else {
+          console.error("Failed to fetch scorecard data for editing");
+        }
+      } catch (error) {
+        console.error("Error fetching scorecard data:", error);
+      }
+    }
   };
 
   return (
@@ -99,13 +120,30 @@ const App = () => {
 
             {currentView === 'create-scorecard' && (
               <div className="form-view">
-                <CreateScorecard user={user} setUser={setUser} configs={configs} />
+                <CreateOrEditScorecard user={user} setUser={setUser} configs={configs} />
+              </div>
+            )}
+
+            {currentView === 'edit-scorecard' && (
+              <div className="form-view">
+                <h2>Edit Scorecard</h2>
+                <CreateOrEditScorecard 
+                  user={user} 
+                  setUser={setUser} 
+                  configs={configs} 
+                  existingScorecard={scorecardToEdit}
+                  onSaveSuccess={() => handleMenuSelect('view-scorecards')}
+                />
               </div>
             )}
 
             {currentView === 'view-scorecards' && (
               <div className="form-view">
-                <ScorecardsList user={user} onViewScorecard={handleViewScorecard} />
+                <ScorecardsList 
+                  user={user} 
+                  onViewScorecard={handleViewScorecard} 
+                  onEditScorecard={handleEditScorecard}
+                />
               </div>
             )}
 
