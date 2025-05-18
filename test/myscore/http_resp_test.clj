@@ -1,7 +1,6 @@
 (ns myscore.http-resp-test
   (:require [clojure.test :refer [deftest testing is]]
             [myscore.http-resp :as http-resp]
-            [cheshire.core :as json]
             [monger.util :as mu]))
 
 (deftest json-response-test

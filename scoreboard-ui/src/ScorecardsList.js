@@ -81,7 +81,6 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
   if (!user) return <p>Please login to view your scorecards.</p>;
   if (loading) return <p>Loading scorecards...</p>;
   if (error) return <p className="error-message">Error: {error}</p>;
-  if (scorecards.length === 0) return <p>No scorecards found.</p>;
 
   return (
     <div className="scorecards-list">
@@ -91,59 +90,65 @@ const ScorecardsList = ({ user, onViewScorecard }) => {
           <input 
             type="checkbox" 
             checked={showArchived} 
-            onChange={(e) => setShowArchived(e.target.checked)} 
+            onChange={(e) => {
+              setShowArchived(e.target.checked);
+            }} 
           />
           Show archived scorecards
         </label>
       </div>
       {message && <p className="success-message">{message}</p>}
-      <table className="scorecard-table">
-        <thead>
-          <tr>
-            <th>Config Name</th>
-            <th>Date Range</th>
-            <th>Date Created</th>
-            <th>General Notes</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scorecards.map((sc, idx) => (
-            <tr key={idx} className={sc.archived ? 'archived-row' : ''}>
-              <td data-label="Config Name">{sc.configName}</td>
-              <td data-label="Date Range">{sc.startDate} - {sc.endDate}</td>
-              <td data-label="Date Created">{sc.dateCreated?.split('T')[0]}</td>
-              <td data-label="General Notes">{sc.generalNotes || '—'}</td>
-              <td data-label="Status">{sc.archived ? 'Archived' : 'Active'}</td>
-              <td data-label="Actions">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent event bubbling
-                    onViewScorecard(sc.id);
-                  }}
-                  className="view-button"
-                  title="View Scorecard"
-                >
-                  👁️
-                </button>
-                {!sc.archived && (
-                  <button
+      {scorecards.length === 0 ? (
+        <p>No {showArchived ? 'archived or active' : 'active'} scorecards found.</p>
+      ) : (
+        <table className="scorecard-table">
+          <thead>
+            <tr>
+              <th>Config Name</th>
+              <th>Date Range</th>
+              <th>Date Created</th>
+              <th>General Notes</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scorecards.map((sc, idx) => (
+              <tr key={idx} className={sc.archived ? 'archived-row' : ''}>
+                <td data-label="Config Name">{sc.configName}</td>
+                <td data-label="Date Range">{sc.startDate} - {sc.endDate}</td>
+                <td data-label="Date Created">{sc.dateCreated?.split('T')[0]}</td>
+                <td data-label="General Notes">{sc.generalNotes || '—'}</td>
+                <td data-label="Status">{sc.archived ? 'Archived' : 'Active'}</td>
+                <td data-label="Actions">
+                  <button 
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent event bubbling
-                      handleArchive(sc.id);
+                      onViewScorecard(sc.id);
                     }}
-                    className="archive-button"
-                    title="Archive Scorecard"
+                    className="view-button"
+                    title="View Scorecard"
                   >
-                    📦 Archive
+                    👁️
                   </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {!sc.archived && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        handleArchive(sc.id);
+                      }}
+                      className="archive-button"
+                      title="Archive Scorecard"
+                    >
+                      📦 Archive
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };

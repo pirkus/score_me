@@ -1,7 +1,7 @@
 (ns myscore.system
   (:require
-   [cheshire.core :as json]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
    [io.pedestal.http.body-params :refer [body-params]]
@@ -15,19 +15,24 @@
    [myscore.http-resp :as http-resp]
    [myscore.jwt :as jwt]
    [myscore.specs :as specs]
-   [ring.util.response :as response]
-   [clojure.tools.logging :as log]))
+   [ring.util.response :as response]))
 
 (def exception-handler
   (err/error-dispatch [context ex]
     [{:exception-type :com.fasterxml.jackson.core.io.JsonEOFException}]
-    (assoc context :response (http-resp/handle-validation-error ex))
+    (do
+      (log/warn "JSON parsing error:" ex)
+      (assoc context :response (http-resp/handle-validation-error ex)))
 
     [{:exception-type :com.mongodb.MongoException}]
-    (assoc context :response (http-resp/handle-db-error ex))
+    (do
+      (log/error "MongoDB error:" ex)
+      (assoc context :response (http-resp/handle-db-error ex)))
 
     :else
-    (assoc context :response (http-resp/server-error (str ex)))))
+    (do
+      (log/error "Unhandled exception:" ex)
+      (assoc context :response (http-resp/server-error (str ex))))))
 
 ;; ----------------------------------------------------------------------------
 ;; Mongo Component
@@ -83,7 +88,7 @@
       (let [{:keys [name metrics email]} (:json-params request)
             result (db/save-config db name metrics email)]
         (if (contains? result :result)
-          (http-resp/ok {:result "saved" :message "Config created"})
+          (http-resp/ok {:result "saved" :id (str (:_id (:result result)))})
           (http-resp/bad-request (:error result))))
       (catch Exception e
         (http-resp/handle-db-error e)))))
@@ -99,7 +104,7 @@
 (defn get-scorecards-handler [db]
   (fn [request]
     (try
-      (let [include-archived (= "true" (get-in request [:query-params "includeArchived"]))
+      (let [include-archived (= "true" (get-in request [:query-params :includeArchived]))
             query (cond-> {:email (get-in request [:identity :email])}
                     (not include-archived) (assoc :archived {:$ne true}))
             docs (mc/find-maps db "scorecards" query)]
@@ -113,11 +118,25 @@
 ;; Helper function to find existing overlapping scorecards
 (defn find-overlapping-scorecard
   "Find any scorecard for the same user that overlaps with the given date range"
-  [db email start-date end-date]
+  [db email configName start-date end-date]
   (mc/find-one-as-map db "scorecards" 
                       {:email email
+                       :configName configName
                        :$or [{:startDate {:$lte end-date}
                               :endDate {:$gte start-date}}]}))
+
+(defn validate-score-types [config scores]
+  (let [metric-types (into {} (map (fn [m] [(:name m) (:scoreType m)]) (:metrics config)))]
+    (every? (fn [score]
+              (let [metric-name (:metricName score)
+                    metric-type (get metric-types metric-name)
+                    dev-score (:devScore score)
+                    mentor-score (:mentorScore score)]
+                (case metric-type
+                  "numeric" (and (number? dev-score) (number? mentor-score))
+                  "checkbox" (and (boolean? dev-score) (boolean? mentor-score))
+                  false)))
+            scores)))
 
 (defn create-scorecard-handler [db]
   (fn [request]
@@ -126,22 +145,33 @@
             email (:email scorecard-data)
             start-date (:startDate scorecard-data)
             end-date (:endDate scorecard-data)
-            existing (find-overlapping-scorecard db email start-date end-date)]
+            config-name (:configName scorecard-data)
+            config (mc/find-one-as-map db "config" {:name config-name :email email})]
         
-        (if existing
-          (http-resp/bad-request 
-           (str "This time period overlaps with an existing scorecard. "
-                "You already have a scorecard for " 
-                (:startDate existing) " to " 
-                (:endDate existing) "."))
-          
-          (let [id (mu/object-id)
-                document (assoc scorecard-data :_id id)]
-            (try
-              (mc/insert db "scorecards" document)
-              (http-resp/ok {:result "saved" :id (str id)})
-              (catch Exception e
-                (http-resp/handle-db-error e))))))
+        (if (nil? config)
+          (http-resp/bad-request "Configuration not found")
+          (if (not (validate-score-types config (:scores scorecard-data)))
+            (http-resp/bad-request "Invalid score types for metrics")
+            (let [existing (find-overlapping-scorecard db email config-name start-date end-date)]
+              (if (and existing (not= (str (:_id existing)) (:_id scorecard-data)))
+                (http-resp/bad-request 
+                 (str "This time period overlaps with an existing scorecard. "
+                      "You already have a scorecard for " 
+                      (:startDate existing) " to " 
+                      (:endDate existing) "."))
+                
+                (let [id (or (:_id scorecard-data) (mu/object-id))
+                      oid (if (string? id) (mu/object-id id) id)
+                      document (-> scorecard-data
+                                   (assoc :_id oid)
+                                   (dissoc :id))]
+                  (try
+                    (if (:_id scorecard-data)
+                      (mc/update-by-id db "scorecards" oid document)
+                      (mc/insert db "scorecards" document))
+                    (http-resp/ok {:result "saved" :id (str oid)})
+                    (catch Exception e
+                      (http-resp/handle-db-error e)))))))))
       (catch Exception e
         (http-resp/handle-validation-error e)))))
 

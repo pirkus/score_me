@@ -92,7 +92,7 @@ const App = () => {
             )}
 
             {currentView === 'create-config' && (
-              <div className="form-container config-form"> {/* Use the container from ConfigForm.css */}
+              <div className="form-container config-form">
                 <ConfigForm user={user} setUser={setUser} />
               </div>
             )}

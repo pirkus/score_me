@@ -6,7 +6,9 @@
         io.pedestal/pedestal.jetty         {:mvn/version "0.7.2"}             ; Jetty adapter for Pedestal :contentReference[oaicite:3]{index=3}
         com.novemberain/monger             {:mvn/version "3.6.0"}             ; Idiomatic Clojure MongoDB client :contentReference[oaicite:4]{index=4}
         cheshire/cheshire                  {:mvn/version "5.13.0"}           ; JSON parsing library (optional) :contentReference[oaicite:5]{index=5}
-        ch.qos.logback/logback-classic     {:mvn/version "1.5.9"}
+        org.slf4j/slf4j-api               {:mvn/version "2.0.9"}             ; SLF4J API
+        org.slf4j/slf4j-simple            {:mvn/version "2.0.9"}             ; SLF4J Simple implementation
+        org.clojure/tools.logging          {:mvn/version "1.3.0"}             ; Clojure logging facade
         buddy/buddy-sign                   {:mvn/version "3.6.1-359"}
         clj-http/clj-http                  {:mvn/version "3.13.0"}
         magnet/buddy-auth.jwt-oidc         {:mvn/version "0.10.3"}

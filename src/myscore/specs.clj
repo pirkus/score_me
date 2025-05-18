@@ -4,17 +4,20 @@
 ;; Config specs
 (s/def ::name string?)
 (s/def ::expectation string?)
-(s/def ::metric (s/keys :req-un [::name ::expectation]))
+(s/def ::scoreType #{"numeric" "checkbox"})
+(s/def ::metric (s/keys :req-un [::name ::expectation ::scoreType]))
 (s/def ::metrics (s/coll-of ::metric :min-count 1))
 (s/def ::email string?)
 (s/def ::create-config-params (s/keys :req-un [::name ::metrics ::email]))
 
-;; Scorecard specs
+;; Metric spec for scorecards
 (s/def ::metricName string?)
-(s/def ::devScore (s/and number? #(<= 0 % 10)))
-(s/def ::mentorScore (s/and number? #(<= 0 % 10)))
+(s/def ::devScore (s/or :numeric number? :checkbox boolean?))
+(s/def ::mentorScore (s/or :numeric number? :checkbox boolean?))
 (s/def ::notes string?)
 (s/def ::score (s/keys :req-un [::metricName ::devScore ::mentorScore] :opt-un [::notes]))
+
+;; Scorecard specs
 (s/def ::scores (s/coll-of ::score :min-count 1))
 (s/def ::configName string?)
 (s/def ::generalNotes string?)

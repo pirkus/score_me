@@ -20,8 +20,6 @@ services:
       - mongo
     ports:
       - "8080:8080"
-    volumes:
-      - .:/app
     working_dir: /app
 
   frontend:

@@ -1,10 +1,6 @@
 (ns myscore.handlers.handler-test
   (:require
-    [clojure.test :refer [deftest is testing use-fixtures]]
-    [cheshire.core :as json]
-    [myscore.system :as system]
-    [myscore.specs :as specs]
-    [clojure.spec.alpha :as s]
+    [clojure.test :refer [use-fixtures]]
     [monger.core :as mg]
     [monger.collection :as mc])
   (:import
@@ -15,13 +11,6 @@
   (doto (MongoDBContainer. (DockerImageName/parse "mongo:latest"))
     (.withExposedPorts (into-array Integer [(int 27017)]))
     (.start)))
-
-;; Make sure the container is started before tests run
-(defonce ensure-mongo-started
-  (do
-    (when-not (.isRunning mongo-container)
-      (.start mongo-container))
-    true))
 
 (use-fixtures
   :once

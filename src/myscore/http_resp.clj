@@ -1,5 +1,7 @@
 (ns myscore.http-resp
-  (:require [cheshire.core :as json]))
+  (:require
+   [cheshire.core :as json]
+   [monger.util :as mu]))
 
 (defn json [status body]
   {:status status
@@ -37,7 +39,7 @@
 
 (defn handle-id-error [id]
   (try
-    (monger.util/object-id id)
+    (mu/object-id id)
     nil
     (catch Exception _
       (bad-request "Invalid ID format"))))
