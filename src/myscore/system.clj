@@ -122,6 +122,7 @@
   (mc/find-one-as-map db "scorecards" 
                       {:email email
                        :configName configName
+                       :archived {:$ne true}
                        :$or [{:startDate {:$lte end-date}
                               :endDate {:$gte start-date}}]}))
 
