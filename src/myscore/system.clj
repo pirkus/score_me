@@ -145,7 +145,6 @@
                         false))))  ;; Unknown score type
                 scores)
         (catch Exception e
-          (println "Error validating scores:" (.getMessage e))
           false)))))
 
 (defn valid-date? [date-str]
@@ -169,15 +168,11 @@
             is-update (contains? scorecard-data :_id)
             config (mc/find-one-as-map db "config" {:name config-name :email email})]
         
-        (println "Processing scorecard request for:" email "config:" config-name "isUpdate:" is-update)
-        
         ;; Check if the config exists
         (cond
           ;; Config not found
           (nil? config)
-          (do
-            (println "Configuration not found for" config-name "and email" email)
-            (http-resp/bad-request "Configuration not found"))
+          (http-resp/bad-request "Configuration not found")
           
           ;; Email is missing
           (not email)
@@ -193,10 +188,7 @@
           
           ;; Empty scores or invalid score types/values
           (not (validate-score-types config (:scores scorecard-data)))
-          (do
-            (println "Invalid scores for" email "- config:" config-name 
-                     "scores:" (pr-str (:scores scorecard-data)))
-            (http-resp/bad-request "Invalid scores - check scores array, types, and ranges (0-10)"))
+          (http-resp/bad-request "Invalid scores - check scores array, types, and ranges (0-10)")
           
           ;; Updating but scorecard not found or belongs to another user
           (and is-update 
@@ -232,16 +224,13 @@
                                  (merge preserved-archived))]
                 
                 (try
-                  (println "Saving scorecard for" email "- id:" (str oid))
                   (if is-update
                     (mc/update-by-id db "scorecards" oid document)
                     (mc/insert db "scorecards" document))
                   (http-resp/ok {:result "saved" :id (str oid)})
                   (catch Exception e
-                    (println "Database error:" (.getMessage e))
                     (http-resp/handle-db-error e))))))))
       (catch Exception e
-        (println "Validation error:" (.getMessage e))
         (http-resp/handle-validation-error e)))))
 
 (defn get-scorecard-handler [db]
