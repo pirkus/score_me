@@ -1,6 +1,7 @@
 (ns myscore.system
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.string :as str]
    [clojure.tools.logging :as log]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
@@ -144,13 +145,13 @@
                         "checkbox" (and (boolean? dev-score) (boolean? mentor-score))
                         false))))  ;; Unknown score type
                 scores)
-        (catch Exception e
+        (catch Exception _
           false)))))
 
 (defn valid-date? [date-str]
   (try
     (when (and date-str (string? date-str))
-      (let [parts (clojure.string/split date-str #"-")]
+      (let [parts (str/split date-str #"-")]
         (and
          (= 3 (count parts))
          (every? #(re-matches #"^\d+$" %) parts))))

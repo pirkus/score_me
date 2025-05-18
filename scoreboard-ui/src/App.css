@@ -641,6 +641,11 @@ p {
 .view-scorecard-form {
   width: 80%;
   max-width: 900px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .view-scorecard-form h2 {
@@ -885,4 +890,21 @@ p {
 
 .archived-row td {
   opacity: 0.8;
+}
+
+/* Score status display for checkboxes in ViewScorecard */
+.score-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-done {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.score-not-done {
+  color: #f44336;
+  font-weight: bold;
 }

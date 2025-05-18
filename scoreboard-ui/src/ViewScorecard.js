@@ -44,13 +44,13 @@ const ViewScorecard = ({ user, setUser, scorecardId }) => {
     // If the score is a boolean, it's a checkbox type
     if (typeof score === 'boolean') {
       return score ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#4caf50', fontWeight: 'bold' }}>✓</span>
+        <div className="score-status">
+          <span className="score-done">✓</span>
           <span>Done</span>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#f44336', fontWeight: 'bold' }}>✗</span>
+        <div className="score-status">
+          <span className="score-not-done">✗</span>
           <span>Not done</span>
         </div>
       );
@@ -59,66 +59,31 @@ const ViewScorecard = ({ user, setUser, scorecardId }) => {
     return score;
   };
 
-  const containerStyle = {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '20px'
-  };
-
-  const headingStyle = {
-    fontSize: '1.5em',
-    marginBottom: '15px',
-    color: '#4caf50'
-  };
-
-  const subheadingStyle = {
-    fontSize: '1.2em',
-    marginBottom: '10px',
-    fontWeight: 'bold'
-  };
-
-  const sectionStyle = {
-    marginBottom: '20px'
-  };
-
-  const labelStyle = {
-    fontWeight: 'bold'
-  };
-
-  const errorStyle = {
-    color: '#f44336'
-  };
-
   if (!user) return <p>Please login to view scorecards.</p>;
   if (loading) return <p>Loading scorecard...</p>;
-  if (error) return <p style={errorStyle}>Error loading scorecard: {error}</p>;
+  if (error) return <p className="error-message">Error loading scorecard: {error}</p>;
   if (!scorecard) return <p>Scorecard not found.</p>;
 
   return (
-    <div style={containerStyle}>
-      <h2 style={headingStyle}>
-        Scorecard Details
-      </h2>
+    <div className="view-scorecard-form">
+      <h2>Scorecard Details</h2>
       
-      <div style={sectionStyle}>
-        <h3 style={subheadingStyle}>
-          {scorecard.configName}
-        </h3>
-        <p>
-          <span style={labelStyle}>Date Range:</span> {scorecard.startDate} - {scorecard.endDate}
-        </p>
-        <p>
-          <span style={labelStyle}>Created:</span> {scorecard.dateCreated?.split('T')[0]}
-        </p>
+      <div className="scorecard-info">
+        <h3>{scorecard.configName}</h3>
+        <div className="info-group">
+          <p><strong>Date Range:</strong> {scorecard.startDate} - {scorecard.endDate}</p>
+          <p><strong>Created:</strong> {scorecard.dateCreated?.split('T')[0]}</p>
+        </div>
+        
         {scorecard.generalNotes && (
-          <div style={{ marginTop: '15px' }}>
-            <h4 style={{ fontSize: '1.1em', marginBottom: '5px' }}>General Notes:</h4>
+          <div className="general-notes">
+            <h4>General Notes:</h4>
             <p>{scorecard.generalNotes}</p>
           </div>
         )}
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
+      <div className="table-wrapper">
         <table className="scorecard-table">
           <thead>
             <tr>
