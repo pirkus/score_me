@@ -41,21 +41,55 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
       existingScorecard: existingScorecard ? true : false
     });
 
-    if (selectedConfigName && configs.length > 0) {
+    // If we're in edit mode, we need to make sure we have a matching config
+    if (isEditing && existingScorecard && configs.length > 0) {
+      const config = configs.find(c => c.name === existingScorecard.configName);
+      console.log("Found config for editing:", config);
+      
+      if (config) {
+        // Force select the config that matches the scorecard
+        if (selectedConfigName !== config.name) {
+          console.log("Setting selected config name to:", config.name);
+          setSelectedConfigName(config.name);
+        }
+        
+        setSelectedConfigDetails(config);
+        
+        console.log("Processing scores for editing with metrics:", config.metrics);
+        console.log("Existing scores:", existingScorecard.scores);
+        
+        // Map existing scores to the format required by the form
+        const mappedScores = config.metrics.map(metric => {
+          const existingScore = existingScorecard.scores.find(s => s.metricName === metric.name);
+          console.log(`Mapping metric ${metric.name}, found score:`, existingScore);
+          
+          const scoreType = metric.scoreType || 'numeric';
+          
+          return {
+            metricName: metric.name,
+            scoreType: scoreType,
+            devScore: existingScore ? existingScore.devScore : (scoreType === 'checkbox' ? false : ''),
+            mentorScore: existingScore ? existingScore.mentorScore : (scoreType === 'checkbox' ? false : ''),
+            notes: existingScore ? existingScore.notes || '' : ''
+          };
+        });
+        console.log("Mapped scores:", mappedScores);
+        setScores(mappedScores);
+        setErrors({});
+        setMessage('');
+      }
+    } else if (selectedConfigName && configs.length > 0) {
+      // Standard flow for selecting a config in create mode or when changing configs
       const config = configs.find(c => c.name === selectedConfigName || c.id === selectedConfigName);
-      console.log("Found config:", config);
+      console.log("Found config by selected name:", config);
       
       if (config) {
         setSelectedConfigDetails(config);
+        
         if (isEditing && existingScorecard) {
-          console.log("Processing scores for editing with metrics:", config.metrics);
-          console.log("Existing scores:", existingScorecard.scores);
-          
           // Map existing scores to the format required by the form
           const mappedScores = config.metrics.map(metric => {
             const existingScore = existingScorecard.scores.find(s => s.metricName === metric.name);
-            console.log(`Mapping metric ${metric.name}, found score:`, existingScore);
-            
             const scoreType = metric.scoreType || 'numeric';
             
             return {
@@ -66,7 +100,6 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
               notes: existingScore ? existingScore.notes || '' : ''
             };
           });
-          console.log("Mapped scores:", mappedScores);
           setScores(mappedScores);
         } else {
           // Initialize new scores for a new scorecard
@@ -320,7 +353,7 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
           <label htmlFor="config-select">Select Configuration:</label>
           <select
             id="config-select"
-            value={selectedConfigName}
+            value={selectedConfigName || ''}
             onChange={(e) => setSelectedConfigName(e.target.value)}
             disabled={isEditing}
             className={errors.config ? 'error-input' : ''}

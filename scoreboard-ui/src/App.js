@@ -152,8 +152,16 @@ const App = () => {
               
               if (configsData && configsData.length > 0) {
                 // Add the config to our local state
-                setConfigs(prevConfigs => [...prevConfigs, configsData[0]]);
+                const updatedConfigs = [...configs, configsData[0]];
+                setConfigs(updatedConfigs);
                 console.log("Added config to local state:", configsData[0]);
+                
+                // Important: Wait for state update by using a timeout
+                setTimeout(() => {
+                  setScorecardToEdit(data);
+                  setCurrentView('edit-scorecard');
+                }, 50);
+                return; // Exit early to let the timeout handle the state changes
               } else {
                 console.warn("Config not found, creating fallback from scorecard data");
                 
@@ -167,7 +175,15 @@ const App = () => {
                   }))
                 };
                 
-                setConfigs(prevConfigs => [...prevConfigs, fallbackConfig]);
+                const updatedConfigs = [...configs, fallbackConfig];
+                setConfigs(updatedConfigs);
+                
+                // Important: Wait for state update by using a timeout
+                setTimeout(() => {
+                  setScorecardToEdit(data);
+                  setCurrentView('edit-scorecard');
+                }, 50);
+                return; // Exit early to let the timeout handle the state changes
               }
             } else {
               console.error("Failed to fetch config, creating fallback");
@@ -182,7 +198,15 @@ const App = () => {
                 }))
               };
               
-              setConfigs(prevConfigs => [...prevConfigs, fallbackConfig]);
+              const updatedConfigs = [...configs, fallbackConfig];
+              setConfigs(updatedConfigs);
+              
+              // Important: Wait for state update by using a timeout
+              setTimeout(() => {
+                setScorecardToEdit(data);
+                setCurrentView('edit-scorecard');
+              }, 50);
+              return; // Exit early to let the timeout handle the state changes
             }
           } catch (configError) {
             console.error("Error fetching specific config:", configError);
