@@ -115,18 +115,83 @@ const App = () => {
 
   const fetchScorecardForEdit = async (scorecardId) => {
     if (user && user.token) {
+      console.log("Fetching scorecard for edit:", scorecardId);
       try {
+        // Step 1: Fetch the scorecard
         const res = await fetch(`${API_URL}/scorecards/${scorecardId}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setScorecardToEdit(data);
-          setCurrentView('edit-scorecard');
-        } else {
+        
+        if (!res.ok) {
           console.error("Failed to fetch scorecard data for editing");
           setCurrentView('menu');
+          return;
         }
+        
+        const data = await res.json();
+        console.log("Received scorecard data:", data);
+        console.log("Config name:", data.configName);
+        console.log("Scores:", data.scores);
+        
+        // Step 2: Check if we need to fetch the config specifically
+        // Only needed if this config isn't in the user's configs list
+        const configExists = configs.some(c => c.name === data.configName);
+        console.log("Config exists in user's configs:", configExists);
+        
+        if (!configExists) {
+          console.log("Fetching specific config:", data.configName);
+          try {
+            // Fetch the config by name using the API
+            const configRes = await fetch(`${API_URL}/scoreboard-configs?configName=${encodeURIComponent(data.configName)}`, {
+              headers: { Authorization: `Bearer ${user.token}` },
+            });
+            
+            if (configRes.ok) {
+              const configsData = await configRes.json();
+              console.log("Fetched config data:", configsData);
+              
+              if (configsData && configsData.length > 0) {
+                // Add the config to our local state
+                setConfigs(prevConfigs => [...prevConfigs, configsData[0]]);
+                console.log("Added config to local state:", configsData[0]);
+              } else {
+                console.warn("Config not found, creating fallback from scorecard data");
+                
+                // Create a fallback config based on scorecard data
+                const fallbackConfig = {
+                  name: data.configName,
+                  metrics: data.scores.map(score => ({
+                    name: score.metricName,
+                    expectation: "Imported from scorecard",
+                    scoreType: typeof score.devScore === 'boolean' ? 'checkbox' : 'numeric'
+                  }))
+                };
+                
+                setConfigs(prevConfigs => [...prevConfigs, fallbackConfig]);
+              }
+            } else {
+              console.error("Failed to fetch config, creating fallback");
+              
+              // Create a fallback config based on scorecard data
+              const fallbackConfig = {
+                name: data.configName,
+                metrics: data.scores.map(score => ({
+                  name: score.metricName,
+                  expectation: "Imported from scorecard", 
+                  scoreType: typeof score.devScore === 'boolean' ? 'checkbox' : 'numeric'
+                }))
+              };
+              
+              setConfigs(prevConfigs => [...prevConfigs, fallbackConfig]);
+            }
+          } catch (configError) {
+            console.error("Error fetching specific config:", configError);
+          }
+        }
+        
+        // Step 3: Now set the scorecard to edit and change the view
+        setScorecardToEdit(data);
+        setCurrentView('edit-scorecard');
       } catch (error) {
         console.error("Error fetching scorecard data:", error);
         setCurrentView('menu');

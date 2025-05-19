@@ -97,7 +97,16 @@
 (defn get-configs-handler [db]
   (fn [request]
     (try
-      (let [docs (mc/find-maps db "config" {:email (get-in request [:identity :email])})]
+      (let [config-name (get-in request [:query-params :configName])
+            user-email (get-in request [:identity :email])
+            
+            ;; If a specific configName is requested, find it regardless of owner
+            ;; Otherwise, just get all configs for the current user
+            query (if config-name
+                    {:name config-name}  
+                    {:email user-email})
+            
+            docs (mc/find-maps db "config" query)]
         (http-resp/ok (->> docs (map #(dissoc % :_id)))))
       (catch Exception e
         (http-resp/handle-db-error e)))))
@@ -178,7 +187,20 @@
             end-date (:endDate scorecard-data)
             config-name (:configName scorecard-data)
             is-update (contains? scorecard-data :_id)
-            config (mc/find-one-as-map db "config" {:name config-name :email email})]
+            
+            ;; If we're updating, get the existing scorecard first
+            existing-doc (when is-update (mc/find-map-by-id db "scorecards" (mu/object-id (:_id scorecard-data))))
+            
+            ;; When updating, use either:
+            ;; 1. The user's own config with matching name
+            ;; 2. If not found, find the config by name and original owner's email (from existing scorecard)
+            config (or 
+                    ;; First try to find config for current user
+                    (mc/find-one-as-map db "config" {:name config-name :email email})
+                    
+                    ;; If updating someone else's scorecard, try to find the original config
+                    (when (and is-update existing-doc (:email existing-doc))
+                      (mc/find-one-as-map db "config" {:name config-name :email (:email existing-doc)})))]
         
         ;; Check if the config exists
         (cond
@@ -202,14 +224,15 @@
           (not (validate-score-types config (:scores scorecard-data)))
           (http-resp/bad-request "Invalid scores - check scores array, types, and ranges (0-10)")
           
-          ;; Updating but scorecard not found or belongs to another user
-          (and is-update 
-               (or (nil? (mc/find-map-by-id db "scorecards" (mu/object-id (:_id scorecard-data))))
-                   (not= email (:email (mc/find-map-by-id db "scorecards" (mu/object-id (:_id scorecard-data)))))))
-          (http-resp/bad-request "Scorecard not found or does not belong to you")
+          ;; Updating but scorecard not found
+          (and is-update (nil? existing-doc))
+          (http-resp/bad-request "Scorecard not found")
           
           :else
-          (let [existing (find-overlapping-scorecard db email config-name start-date end-date)]
+          (let [;; Only check overlaps for the owner, not for other editors
+                check-overlaps (= email (:email existing-doc))
+                existing (when check-overlaps 
+                           (find-overlapping-scorecard db email config-name start-date end-date))]
             (if (and existing (not= (str (:_id existing)) (:_id scorecard-data)))
               ;; Overlapping date range
               (http-resp/bad-request 
@@ -222,18 +245,26 @@
               (let [id (or (:_id scorecard-data) (mu/object-id))
                     oid (if (string? id) (mu/object-id id) id)
                     
-                    ;; If updating, get existing doc
-                    existing-doc (when is-update (mc/find-map-by-id db "scorecards" oid))
+                    ;; Preserve important fields when updating
+                    preserved-fields (when (and is-update existing-doc)
+                                      {:archived (:archived existing-doc)
+                                       ;; Keep track of the original owner's email
+                                       :originalEmail (or (:originalEmail existing-doc)  
+                                                         (:email existing-doc))})
                     
-                    ;; Preserve archived status in updates if it exists
-                    preserved-archived (when (and is-update (:archived existing-doc))
-                                         {:archived (:archived existing-doc)})
+                    ;; For an update by a different user, store who made the change
+                    update-metadata (when (and is-update 
+                                              existing-doc
+                                              (not= email (:email existing-doc)))
+                                     {:lastUpdatedBy email
+                                      :lastUpdatedAt (.toString (java.time.Instant/now))})
                     
                     ;; Merge everything
                     document (-> scorecard-data
                                  (assoc :_id oid)
                                  (dissoc :id :publicId)
-                                 (merge preserved-archived))]
+                                 (merge preserved-fields)
+                                 (merge update-metadata))]
                 
                 (try
                   (if is-update

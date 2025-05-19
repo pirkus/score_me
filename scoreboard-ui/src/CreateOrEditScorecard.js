@@ -21,6 +21,7 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
   // Initialize form with existing scorecard data if provided
   useEffect(() => {
     if (existingScorecard) {
+      console.log("Initializing form with existing scorecard:", existingScorecard);
       setIsEditing(true);
       setScorecardId(existingScorecard.id);
       setSelectedConfigName(existingScorecard.configName);
@@ -33,14 +34,28 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
   }, [existingScorecard]);
 
   useEffect(() => {
+    console.log("Config/scorecard effect running with:", {
+      selectedConfigName,
+      configsLength: configs.length,
+      isEditing,
+      existingScorecard: existingScorecard ? true : false
+    });
+
     if (selectedConfigName && configs.length > 0) {
       const config = configs.find(c => c.name === selectedConfigName || c.id === selectedConfigName);
+      console.log("Found config:", config);
+      
       if (config) {
         setSelectedConfigDetails(config);
         if (isEditing && existingScorecard) {
+          console.log("Processing scores for editing with metrics:", config.metrics);
+          console.log("Existing scores:", existingScorecard.scores);
+          
           // Map existing scores to the format required by the form
           const mappedScores = config.metrics.map(metric => {
             const existingScore = existingScorecard.scores.find(s => s.metricName === metric.name);
+            console.log(`Mapping metric ${metric.name}, found score:`, existingScore);
+            
             const scoreType = metric.scoreType || 'numeric';
             
             return {
@@ -51,6 +66,7 @@ const CreateOrEditScorecard = ({ user, setUser, configs, existingScorecard, onSa
               notes: existingScore ? existingScore.notes || '' : ''
             };
           });
+          console.log("Mapped scores:", mappedScores);
           setScores(mappedScores);
         } else {
           // Initialize new scores for a new scorecard

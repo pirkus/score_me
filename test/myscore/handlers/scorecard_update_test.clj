@@ -201,3 +201,77 @@
     ;; Clean up
     (mc/remove db "config" {:email email})
     (mc/remove db "scorecards" {:email email})))
+
+(deftest update-scorecard-by-different-user-test
+  (let [db (fresh-db)
+        create-config-handler (system/create-config-handler db)
+        create-scorecard-handler (system/create-scorecard-handler db)
+        
+        ;; Original owner's email
+        owner-email "owner@example.com"
+        
+        ;; Different user's email
+        editor-email "editor@example.com"
+        
+        config-name "Shared Config"
+        
+        ;; Create config for original owner
+        config-data {:name config-name
+                    :metrics [{:name "Metric1" 
+                              :expectation "Rate 0-10"
+                              :scoreType "numeric"}]
+                    :email owner-email}
+        
+        ;; Create initial scorecard
+        original-scorecard-data {:email owner-email
+                               :configName config-name
+                               :scores [{:metricName "Metric1" :devScore 7 :mentorScore 8}]
+                               :startDate "2023-01-01"
+                               :endDate "2023-01-10"
+                               :generalNotes "Original notes"
+                               :dateCreated (.toString (java.time.Instant/now))}]
+    
+    ;; Setup test environment
+    (testing "Setup: Create config and initial scorecard as owner"
+      (let [config-response (create-config-handler {:json-params config-data})]
+        (is (= 200 (:status config-response))))
+      
+      ;; Create initial scorecard as owner
+      (let [scorecard-response (create-scorecard-handler {:json-params original-scorecard-data})
+            body (json/parse-string (:body scorecard-response) true)]
+        (is (= 200 (:status scorecard-response)))
+        (is (contains? body :id))
+        
+        ;; Store id for update test
+        (let [scorecard-id (:id body)
+              
+              ;; Updated scorecard data with different user's email
+              updated-scorecard-data {:_id scorecard-id
+                                     :email editor-email  ;; Different user email
+                                     :configName config-name
+                                     :scores [{:metricName "Metric1" :devScore 9.5 :mentorScore 9}]
+                                     :startDate "2023-01-01"
+                                     :endDate "2023-01-15" ;; Extended date
+                                     :generalNotes "Updated by different user"
+                                     :dateCreated original-scorecard-data}]
+          
+          (testing "Update by different user"
+            (let [update-response (create-scorecard-handler {:json-params updated-scorecard-data})]
+              (is (= 200 (:status update-response)))
+              
+              ;; Verify that the update was stored correctly
+              (let [updated-scorecard (mc/find-map-by-id db "scorecards" (mu/object-id scorecard-id))]
+                ;; Check the updated content
+                (is (= "Updated by different user" (:generalNotes updated-scorecard)))
+                (is (= 9.5 (get-in updated-scorecard [:scores 0 :devScore])))
+                
+                ;; Check that metadata was preserved
+                (is (= owner-email (:originalEmail updated-scorecard)))
+                
+                ;; Check that update metadata was added
+                (is (= editor-email (:lastUpdatedBy updated-scorecard)))
+                (is (not (nil? (:lastUpdatedAt updated-scorecard)))))))))
+      
+      ;; Clean up
+      (mc/remove db "config" {:email owner-email})
+      (mc/remove db "scorecards" {}))))
