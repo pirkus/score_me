@@ -37,12 +37,25 @@
       :else
       (server-error (str "Database error: " (.getMessage e))))))
 
+;; Check if string is potentially a base64 encoded ID
+(defn is-base64? [s]
+  (and (string? s)
+       (re-matches #"^[A-Za-z0-9+/=_-]+$" s)
+       (>= (count s) 16)))
+
 (defn handle-id-error [id]
-  (try
-    (mu/object-id id)
+  (cond
+    ;; Try parsing as MongoDB ObjectID
+    (try (mu/object-id id) true (catch Exception _ false))
     nil
-    (catch Exception _
-      (bad-request "Invalid ID format"))))
+    
+    ;; Check if it looks like a base64 encoded ID
+    (is-base64? id)
+    nil
+    
+    ;; Otherwise invalid
+    :else
+    (bad-request "Invalid ID format")))
 
 (defn handle-validation-error [e]
   (let [data (ex-data e)

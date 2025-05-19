@@ -30,6 +30,8 @@
       (is (= 200 (:status scorecard-response)))
       (let [body (json/parse-string (:body scorecard-response) true)]
         (is (contains? body :id))
+        (is (contains? body :encodedId))
+        (is (= (system/encode-id (:id body)) (:encodedId body)))
         (let [created (mc/find-one-as-map db "scorecards" {:email email})]
           (is (= true (get-in created [:scores 0 :devScore]))))))
     ;; Clean up
@@ -68,6 +70,8 @@
       (is (= 200 (:status scorecard-response)))
       (let [body (json/parse-string (:body scorecard-response) true)]
         (is (contains? body :id))
+        (is (contains? body :encodedId))
+        (is (= (system/encode-id (:id body)) (:encodedId body)))
         (let [created (mc/find-one-as-map db "scorecards" {:email email})]
           (is (= 8.5 (get-in created [:scores 0 :devScore])))
           (is (= true (get-in created [:scores 1 :devScore]))))))
@@ -155,10 +159,14 @@
         ;; Update scores using create endpoint
         
         (is (= 200 (:status update-response)))
+        (let [update-body (json/parse-string (:body update-response) true)]
+          (is (contains? update-body :encodedId))
+          (is (= (system/encode-id scorecard-id) (:encodedId update-body))))
+        
         (let [updated (mc/find-one-as-map db "scorecards" {:_id (mu/object-id scorecard-id)})]
           (is (= 9.5 (get-in updated [:scores 0 :devScore])))
-          (is (= false (get-in updated [:scores 1 :devScore])))))
+          (is (= false (get-in updated [:scores 1 :devScore]))))))
     
     ;; Clean up
     (mc/remove db "config" {:email email})
-    (mc/remove db "scorecards" {:email email}))))
+    (mc/remove db "scorecards" {:email email})))

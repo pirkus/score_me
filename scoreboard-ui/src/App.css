@@ -791,7 +791,8 @@ p {
 /* Modern action buttons - improved visibility */
 .view-button,
 .archive-button,
-.edit-button {
+.edit-button,
+.permalink-button-small {
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -907,4 +908,82 @@ p {
 .score-not-done {
   color: #f44336;
   font-weight: bold;
+}
+
+/* Permalink Section */
+.permalink-section {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+}
+
+.permalink-button {
+  background-color: #4c6ef5;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.permalink-button:hover {
+  background-color: #364fc7;
+}
+
+.copy-status {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #d3f9d8;
+  border-radius: 4px;
+  color: #2b8a3e;
+  font-size: 0.9em;
+  animation: fadeIn 0.3s;
+}
+
+.permalink-info {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #666;
+  font-style: italic;
+}
+
+.permalink-notice {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #fff3bf;
+  border-radius: 4px;
+  color: #8a6d3b;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Permalink Button in ScorecardsList */
+.permalink-button-small {
+  background: linear-gradient(90deg, #4c6ef5 0%, #228be6 100%);
+}
+
+.permalink-button-small:hover:not(:disabled) {
+  background: linear-gradient(90deg, #228be6 0%, #4c6ef5 100%);
+  color: #fff;
+  transform: translateY(-2px) scale(1.10);
+  box-shadow: 0 4px 12px rgba(76, 110, 245, 0.18);
+}
+
+.permalink-button-small:disabled {
+  background: #c5f6c5;
+  color: #2b8a3e;
+  cursor: default;
+  transform: none;
 }

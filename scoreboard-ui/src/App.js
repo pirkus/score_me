@@ -22,6 +22,46 @@ const App = () => {
   // Check for token expiration every time the user state is updated
   useTokenExpiryCheck(user, setUser);
 
+  // Parse URL to handle direct navigation via permalinks
+  useEffect(() => {
+    // If we already have a scorecardId from permalink handling, we don't need to parse again
+    if (selectedScorecardId && (currentView === 'view-scorecard' || currentView === 'edit-scorecard')) {
+      return;
+    }
+
+    const path = window.location.pathname;
+    const pathParts = path.split('/').filter(part => part !== '');
+    
+    if (pathParts.length >= 2) {
+      const action = pathParts[0]; // "view" or "edit"
+      const id = pathParts[1]; // scorecard id or encodedId
+      
+      if (action === 'view' && id) {
+        setSelectedScorecardId(id);
+        setCurrentView('view-scorecard');
+      } else if (action === 'edit' && id) {
+        // We'll fetch the scorecard data after user is logged in
+        setSelectedScorecardId(id);
+        setCurrentView('edit-scorecard-pending'); // Special state to load scorecard after login
+      }
+    }
+  }, []);
+
+  // Update URL when view changes
+  useEffect(() => {
+    if (currentView === 'view-scorecard' && selectedScorecardId) {
+      // If selectedScorecardId looks like an encodedId (contains non-hex chars), use it directly
+      // Otherwise try to get the scorecard data to use its encodedId
+      window.history.pushState(null, '', `/view/${selectedScorecardId}`);
+    } else if (currentView === 'edit-scorecard' && scorecardToEdit?.encodedId) {
+      // Use encodedId for permalink URLs
+      window.history.pushState(null, '', `/edit/${scorecardToEdit.encodedId}`);
+    } else if (currentView === 'menu') {
+      window.history.pushState(null, '', '/');
+    }
+  }, [currentView, selectedScorecardId, scorecardToEdit]);
+
+  // Fetch configs when user logs in
   useEffect(() => {
     if (user && user.token) {
       fetch(`${API_URL}/scoreboard-configs`, {
@@ -30,9 +70,15 @@ const App = () => {
         .then((response) => response.json())
         .then((data) => setConfigs(data))
         .catch((error) => console.log("Error fetching configs:", error));
+      
+      // If we were trying to edit a scorecard via permalink, fetch it now
+      if (currentView === 'edit-scorecard-pending' && selectedScorecardId) {
+        fetchScorecardForEdit(selectedScorecardId);
+      }
     }
-  }, [user]);
+  }, [user, currentView, selectedScorecardId]);
 
+  // Try to restore user session from localStorage
   useEffect(() => {
     const token = localStorage.getItem("google_token");
     if (token) {
@@ -67,7 +113,7 @@ const App = () => {
     setCurrentView('view-scorecard');
   };
 
-  const handleEditScorecard = async (scorecardId) => {
+  const fetchScorecardForEdit = async (scorecardId) => {
     if (user && user.token) {
       try {
         const res = await fetch(`${API_URL}/scorecards/${scorecardId}`, {
@@ -79,11 +125,17 @@ const App = () => {
           setCurrentView('edit-scorecard');
         } else {
           console.error("Failed to fetch scorecard data for editing");
+          setCurrentView('menu');
         }
       } catch (error) {
         console.error("Error fetching scorecard data:", error);
+        setCurrentView('menu');
       }
     }
+  };
+
+  const handleEditScorecard = async (scorecardId) => {
+    await fetchScorecardForEdit(scorecardId);
   };
 
   return (
@@ -92,11 +144,16 @@ const App = () => {
         <h1>🎯 Scorecard System</h1>
 
         {!user ? (
-          <GoogleLogin
-            onSuccess={responseGoogle}
-            onError={() => console.log("Login Failed")}
-            theme="outline"
-          />
+          <div>
+            <GoogleLogin
+              onSuccess={responseGoogle}
+              onError={() => console.log("Login Failed")}
+              theme="outline"
+            />
+            {(currentView === 'edit-scorecard-pending' || currentView === 'view-scorecard') && selectedScorecardId && (
+              <p className="permalink-notice">Please log in to access the scorecard</p>
+            )}
+          </div>
         ) : (
           <div>
             <p>Welcome, <strong>👋 {user.decoded.name}</strong>!</p>

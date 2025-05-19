@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { encodeId } from './utils';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -8,6 +9,7 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     if (!user || !user.token) {
@@ -78,6 +80,32 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
     }
   };
 
+  const handleCopyPermalink = (scorecard) => {
+    if (!scorecard) return;
+    
+    // Use scorecard.encodedId if available, otherwise encode the ID
+    const encodedIdToUse = scorecard.encodedId || encodeId(scorecard.id);
+    
+    if (!encodedIdToUse) return;
+    
+    // Get the base URL (without any path)
+    const currentUrl = window.location.href;
+    const baseUrl = currentUrl.split('/').slice(0, 3).join('/');
+    
+    // Create the permalink with the encoded ID
+    const permalink = `${baseUrl}/edit/${encodedIdToUse}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(permalink)
+      .then(() => {
+        setCopiedId(scorecard.id);
+        setTimeout(() => setCopiedId(null), 3000);
+      })
+      .catch(err => {
+        console.error('Failed to copy permalink:', err);
+      });
+  };
+
   if (!user) return <p>Please login to view your scorecards.</p>;
   if (loading) return <p>Loading scorecards...</p>;
   if (error) return <p className="error-message">Error: {error}</p>;
@@ -124,7 +152,8 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent event bubbling
-                      onViewScorecard(sc.id);
+                      // Use encodedId if available, otherwise encode the ID
+                      onViewScorecard(sc.encodedId || encodeId(sc.id));
                     }}
                     className="view-button"
                     title="View Scorecard"
@@ -136,7 +165,8 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent event bubbling
-                          onEditScorecard(sc.id);
+                          // Use encodedId if available, otherwise encode the ID
+                          onEditScorecard(sc.encodedId || encodeId(sc.id));
                         }}
                         className="edit-button"
                         title="Edit Scorecard"
@@ -155,6 +185,17 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
                       </button>
                     </>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent event bubbling
+                      handleCopyPermalink(sc);
+                    }}
+                    className="permalink-button-small"
+                    title="Copy Edit Permalink"
+                    disabled={copiedId === sc.id}
+                  >
+                    {copiedId === sc.id ? '✓ Copied!' : '🔗✏️'}
+                  </button>
                 </td>
               </tr>
             ))}

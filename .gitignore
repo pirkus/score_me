@@ -1,2 +1,1 @@
 # ignore deployment script with secrets
-deploy-remote.sh 

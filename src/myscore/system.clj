@@ -158,6 +158,17 @@
     (catch Exception _
       false)))
 
+;; Base64 encoding/decoding functions for ObjectIDs
+(defn encode-id [id]
+  (let [id-str (if (string? id) id (str id))]
+    (.encodeToString (java.util.Base64/getUrlEncoder) (.getBytes id-str))))
+
+(defn decode-id [encoded-id]
+  (try
+    (String. (.decode (java.util.Base64/getUrlDecoder) encoded-id))
+    (catch Exception _
+      nil)))
+
 (defn create-scorecard-handler [db]
   (fn [request]
     (try
@@ -211,7 +222,7 @@
               (let [id (or (:_id scorecard-data) (mu/object-id))
                     oid (if (string? id) (mu/object-id id) id)
                     
-                    ;; If updating, get existing doc for archived status
+                    ;; If updating, get existing doc
                     existing-doc (when is-update (mc/find-map-by-id db "scorecards" oid))
                     
                     ;; Preserve archived status in updates if it exists
@@ -221,14 +232,16 @@
                     ;; Merge everything
                     document (-> scorecard-data
                                  (assoc :_id oid)
-                                 (dissoc :id)
+                                 (dissoc :id :publicId)
                                  (merge preserved-archived))]
                 
                 (try
                   (if is-update
                     (mc/update-by-id db "scorecards" oid document)
                     (mc/insert db "scorecards" document))
-                  (http-resp/ok {:result "saved" :id (str oid)})
+                  (let [id-str (str oid)
+                        encoded-id (encode-id id-str)]
+                    (http-resp/ok {:result "saved" :id id-str :encodedId encoded-id}))
                   (catch Exception e
                     (http-resp/handle-db-error e))))))))
       (catch Exception e
@@ -240,9 +253,19 @@
       (if-let [id-error (http-resp/handle-id-error id)]
         id-error
         (try
-          (let [doc (mc/find-map-by-id db "scorecards" (mu/object-id id))]
+          ;; Check if it's a base64 encoded ID
+          (let [decoded-id (decode-id id)
+                mongo-id (if decoded-id 
+                          (try (mu/object-id decoded-id) (catch Exception _ nil))
+                          (try (mu/object-id id) (catch Exception _ nil)))
+                doc (when mongo-id (mc/find-map-by-id db "scorecards" mongo-id))]
             (if doc
-              (http-resp/ok (-> doc (assoc :id (str (:_id doc))) (dissoc :_id)))
+              (let [id-str (str (:_id doc))
+                    encoded-id (encode-id id-str)]
+                (http-resp/ok (-> doc 
+                                (assoc :id id-str) 
+                                (assoc :encodedId encoded-id)
+                                (dissoc :_id :publicId))))
               (http-resp/not-found "Scorecard not found")))
           (catch Exception e
             (http-resp/handle-db-error e)))))))

@@ -66,7 +66,12 @@
   (testing "Valid ObjectId"
     (is (nil? (http-resp/handle-id-error (str (mu/object-id))))))
   
-  (testing "Invalid ObjectId"
+  (testing "Base64 encoded ID"
+    (let [id (str (mu/object-id))
+          encoded-id (.encodeToString (java.util.Base64/getUrlEncoder) (.getBytes id))]
+      (is (nil? (http-resp/handle-id-error encoded-id)))))
+  
+  (testing "Invalid ID"
     (let [response (http-resp/handle-id-error "invalid-id")]
       (is (= 400 (:status response)))
       (is (= "{\"error\":\"Invalid ID format\"}" (:body response))))))

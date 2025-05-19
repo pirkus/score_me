@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useTokenExpiryCheck from './useTokenExpiryCheck';
+import { encodeId } from './utils';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -8,6 +9,7 @@ const ViewScorecard = ({ user, setUser, scorecardId }) => {
   const [scorecard, setScorecard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     if (!user || !user.token || !scorecardId) {
@@ -59,10 +61,41 @@ const ViewScorecard = ({ user, setUser, scorecardId }) => {
     return score;
   };
 
+  const handleCopyPermalink = () => {
+    if (!scorecard) return;
+    
+    // Use scorecard.encodedId if available, otherwise encode the ID
+    const encodedIdToUse = scorecard.encodedId || encodeId(scorecard.id);
+    
+    if (!encodedIdToUse) return;
+    
+    // Get the base URL (without any path)
+    const currentUrl = window.location.href;
+    const baseUrl = currentUrl.split('/').slice(0, 3).join('/');
+    
+    // Create the permalink with encoded ID
+    const permalink = `${baseUrl}/edit/${encodedIdToUse}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(permalink)
+      .then(() => {
+        setCopyStatus('Permalink copied!');
+        setTimeout(() => setCopyStatus(''), 3000);
+      })
+      .catch(err => {
+        setCopyStatus('Failed to copy');
+        console.error('Failed to copy permalink:', err);
+        setTimeout(() => setCopyStatus(''), 3000);
+      });
+  };
+
   if (!user) return <p>Please login to view scorecards.</p>;
   if (loading) return <p>Loading scorecard...</p>;
   if (error) return <p className="error-message">Error loading scorecard: {error}</p>;
   if (!scorecard) return <p>Scorecard not found.</p>;
+
+  // Always show the permalink button - we can generate one even for old scorecards
+  const hasEncodedId = Boolean(scorecard.encodedId || scorecard.id);
 
   return (
     <div className="view-scorecard-form">
@@ -81,6 +114,19 @@ const ViewScorecard = ({ user, setUser, scorecardId }) => {
             <p>{scorecard.generalNotes}</p>
           </div>
         )}
+        
+        <div className="permalink-section">
+          <button 
+            className="permalink-button" 
+            onClick={handleCopyPermalink}
+            disabled={!hasEncodedId}>
+            Copy Edit Permalink
+          </button>
+          {copyStatus && <span className="copy-status">{copyStatus}</span>}
+          <p className="permalink-info">
+            Share this permalink to allow others to edit this scorecard
+          </p>
+        </div>
       </div>
 
       <div className="table-wrapper">
