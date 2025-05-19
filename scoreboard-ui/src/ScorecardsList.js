@@ -20,14 +20,14 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
       setLoading(true);
       try {
         const url = `${API_URL}/scorecards${showArchived ? '?includeArchived=true' : ''}`;
-        const res = await fetch(url, {
+        const response = await fetch(url, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || res.statusText);
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || response.statusText);
         }
-        const data = await res.json();
+        const data = await response.json();
         setScorecards(data);
       } catch (err) {
         setError(err.message);
@@ -45,7 +45,7 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
       const scorecard = scorecards.find(sc => sc.id === id);
       const scorecardName = scorecard ? scorecard.configName : 'Scorecard';
       
-      const res = await fetch(`${API_URL}/scorecards/${id}/archive`, {
+      await fetch(`${API_URL}/scorecards/${id}/archive`, {
         method: 'POST',
         headers: { 
           Authorization: `Bearer ${user.token}`,
@@ -185,17 +185,19 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent event bubbling
-                      handleCopyPermalink(sc);
-                    }}
-                    className="permalink-button-small"
-                    title="Copy Edit Permalink"
-                    disabled={copiedId === sc.id}
-                  >
-                    {copiedId === sc.id ? '✓ Copied!' : '🔗✏️'}
-                  </button>
+                  {!sc.archived && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        handleCopyPermalink(sc);
+                      }}
+                      className="permalink-button-small"
+                      title="Copy Edit Permalink"
+                      disabled={copiedId === sc.id}
+                    >
+                      {copiedId === sc.id ? '✓ Copied!' : '🔗✏️'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
