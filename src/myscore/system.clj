@@ -259,12 +259,13 @@
                                      {:lastUpdatedBy email
                                       :lastUpdatedAt (.toString (java.time.Instant/now))})
                     
-                    ;; Merge everything
+                    ;; Merge everything, ensuring :email is always the original owner's email on update
                     document (-> scorecard-data
                                  (assoc :_id oid)
                                  (dissoc :id :publicId)
                                  (merge preserved-fields)
-                                 (merge update-metadata))]
+                                 (merge update-metadata)
+                                 (assoc :email (if is-update (:email existing-doc) email)))]
                 
                 (try
                   (if is-update
