@@ -1,12 +1,28 @@
-(ns myscore.handlers.overlap-test
+(ns myscore.handlers.date-test
   (:require
     [clojure.test :refer [deftest is testing]]
-    [myscore.system :refer [find-overlapping-scorecard]]
+    [myscore.system :refer [valid-date? find-overlapping-scorecard]]
     [monger.collection :as mc]
     [monger.util :as mu]
     [myscore.handlers.handler-test :refer [fresh-db]]))
 
-(deftest find-overlapping-scorecard-test
+(deftest date-format-test
+  (testing "valid date formats"
+    (is (true? (valid-date? "2023-01-01")))
+    (is (true? (valid-date? "2023-12-31")))
+    (is (true? (valid-date? "2000-02-29")))
+    (is (true? (valid-date? "01-01-2023")))  ;; System accepts MM-DD-YYYY
+    (is (true? (valid-date? "2023-1-1"))))   ;; System accepts single digits
+  
+  (testing "invalid date formats"
+    (is (nil? (valid-date? nil)))            ;; Should return nil, not false
+    (is (false? (valid-date? "")))           
+    (is (false? (valid-date? "2023/01/01"))) ;; Wrong separator
+    (is (false? (valid-date? "not-a-date"))) ;; Not date-like
+    (is (nil? (valid-date? 20230101)))       ;; Should return nil for non-string
+    (is (nil? (valid-date? {:year 2023 :month 1 :day 1})))))  ;; Should return nil for non-string
+
+(deftest date-overlapping-test
   (let [db (fresh-db)
         email "test@example.com"
         configA "configA"
@@ -69,7 +85,7 @@
     ;; Clean up after
     (mc/remove db "scorecards" {:email email})))
 
-(deftest find-overlapping-scorecard-complex-test
+(deftest complex-overlap-test
   (let [db (fresh-db)
         email "test@example.com"
         config-name "Test Config"
@@ -124,4 +140,4 @@
         (is (= (str (:_id scorecard1)) (str (:_id result))))))
     
     ;; Clean up
-    (mc/drop db "scorecards"))) 
+    (mc/drop db "scorecards")))

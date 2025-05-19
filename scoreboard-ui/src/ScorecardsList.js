@@ -181,7 +181,7 @@ const ScorecardsList = ({ user, onViewScorecard, onEditScorecard }) => {
                         className="archive-button"
                         title="Archive Scorecard"
                       >
-                        📦 Archive
+                        📦
                       </button>
                     </>
                   )}
