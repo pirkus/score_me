@@ -4,7 +4,6 @@
     [cheshire.core :as json]
     [myscore.system :as system]
     [monger.collection :as mc]
-    [monger.util :as mu]
     [myscore.handlers.handler-test :refer [fresh-db]]))
 
 (deftest create-config-handler-test

@@ -13,7 +13,6 @@
         
         ;; Insert a test scorecard
         scorecard-id (mu/object-id)
-        encoded-id (system/encode-id (str scorecard-id))
         test-scorecard {:_id scorecard-id
                         :configName "Test Config"
                         :email "test@example.com"
