@@ -228,6 +228,10 @@
           (and is-update (nil? existing-doc))
           (http-resp/bad-request "Scorecard not found")
           
+          ;; Prevent updates to archived scorecards
+          (and is-update (:archived existing-doc))
+          (http-resp/bad-request "Cannot update an archived scorecard")
+          
           :else
           (let [;; Only check overlaps for the owner, not for other editors
                 check-overlaps (= email (:email existing-doc))

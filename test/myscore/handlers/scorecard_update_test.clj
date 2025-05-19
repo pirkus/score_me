@@ -180,7 +180,7 @@
           (is (true? (:archived archived-scorecard))))
         
         ;; Now try to update the archived scorecard
-        (testing "Update of archived scorecard"
+        (testing "Update of archived scorecard is prevented"
           (let [update-data {:_id scorecard-id
                             :email email
                             :configName config-name
@@ -190,13 +190,68 @@
                             :dateCreated scorecard-data}
                 update-response (create-scorecard-handler {:json-params update-data})]
             
-            ;; Should succeed (update is allowed for archived scorecards)
-            (is (= 200 (:status update-response)))
+            ;; Should fail (update is prevented for archived scorecards)
+            (is (= 400 (:status update-response)))
+            (let [error-message (get (json/parse-string (:body update-response) true) :error)]
+              (is (re-find #"Cannot update an archived scorecard" error-message)))))))
+    
+    ;; Clean up
+    (mc/remove db "config" {:email email})
+    (mc/remove db "scorecards" {:email email})))
+
+(deftest update-archived-scorecard-prevented-test
+  (let [db (fresh-db)
+        create-config-handler (system/create-config-handler db)
+        create-scorecard-handler (system/create-scorecard-handler db)
+        archive-handler (system/archive-scorecard-handler db)
+        email "test@example.com"
+        config-name "Archive Update Prevented Test"
+        
+        ;; Setup - create config
+        config-data {:name config-name
+                     :metrics [{:name "Metric1" :scoreType "numeric"}]
+                     :email email}
+        
+        ;; Initial scorecard
+        scorecard-data {:email email
+                       :configName config-name
+                       :scores [{:metricName "Metric1" :devScore 7 :mentorScore 8}]
+                       :startDate "2023-01-01"
+                       :endDate "2023-01-15"
+                       :dateCreated (.toString (java.time.Instant/now))}]
+    
+    ;; Setup test data
+    (let [config-response (create-config-handler {:json-params config-data})]
+      (is (= 200 (:status config-response))))
+    
+    (let [scorecard-response (create-scorecard-handler {:json-params scorecard-data})
+          scorecard-body (json/parse-string (:body scorecard-response) true)
+          scorecard-id (:id scorecard-body)]
+      (is (= 200 (:status scorecard-response)))
+      
+      ;; Archive the scorecard
+      (let [archive-response (archive-handler {:path-params {:id scorecard-id}})]
+        (is (= 200 (:status archive-response)))
+        
+        ;; Verify it was archived
+        (let [archived-scorecard (mc/find-map-by-id db "scorecards" (mu/object-id scorecard-id))]
+          (is (true? (:archived archived-scorecard))))
+        
+        ;; Now try to update the archived scorecard
+        (testing "Update of archived scorecard is prevented"
+          (let [update-data {:_id scorecard-id
+                            :email email
+                            :configName config-name
+                            :scores [{:metricName "Metric1" :devScore 9 :mentorScore 10}]
+                            :startDate "2023-01-01"
+                            :endDate "2023-01-15"
+                            :dateCreated scorecard-data}
+                update-response (create-scorecard-handler {:json-params update-data})]
             
-            ;; Verify the update was applied but archived status remains
-            (let [updated (mc/find-map-by-id db "scorecards" (mu/object-id scorecard-id))]
-              (is (= 9 (get-in updated [:scores 0 :devScore])))
-              (is (true? (:archived updated))))))))
+            ;; Should fail (update is prevented for archived scorecards)
+            (is (= 400 (:status update-response)))
+            (let [error-message (get (json/parse-string (:body update-response) true) :error)]
+              (is (re-find #"Cannot update an archived scorecard" error-message)))))))
     
     ;; Clean up
     (mc/remove db "config" {:email email})
