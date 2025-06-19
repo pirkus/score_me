@@ -53,7 +53,29 @@
       
       ;; Verify it was saved
       (let [saved (db/find-progress @test-db "new.csv" "test@example.com")]
-        (is (= (:filename progress-data) (:filename saved)))))))
+        (is (= (:filename progress-data) (:filename saved))))))
+  
+  (testing "Create progress with errors and warnings"
+    (let [progress-data {:filename "errors.csv"
+                        :email "test@example.com"
+                        :counts {:done 5 :warn 2 :failed 1}
+                        :errors [{:line 10 :message "Error 1"}
+                                {:line 20 :message "Error 2"}]
+                        :warnings [{:line 5 :message "Warning 1"}]
+                        :isCompleted false
+                        :createdAt "2024-01-01T00:00:00Z"}
+          result (db/create-progress @test-db progress-data)]
+      (is (contains? result :_id))
+      (is (= 2 (count (:errors result))))
+      (is (= 1 (count (:warnings result))))
+      
+      ;; Verify errors and warnings were saved
+      (let [saved (db/find-progress @test-db "errors.csv" "test@example.com")]
+        (is (= 2 (count (:errors saved))))
+        (is (= "Error 1" (get-in saved [:errors 0 :message])))
+        (is (= 10 (get-in saved [:errors 0 :line])))
+        (is (= 1 (count (:warnings saved))))
+        (is (= "Warning 1" (get-in saved [:warnings 0 :message])))))))
 
 (deftest update-progress-test
   (testing "Update existing progress"

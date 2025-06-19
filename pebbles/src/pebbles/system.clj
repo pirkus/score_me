@@ -75,7 +75,7 @@
   (fn [request]
     (try
       (let [email (get-in request [:identity :email])
-            {:keys [filename counts total isLast]} (:json-params request)
+            {:keys [filename counts total isLast errors warnings]} (:json-params request)
             {:keys [done warn failed]} counts
             now (.toString (java.time.Instant/now))
             
@@ -100,12 +100,18 @@
                              :isCompleted (boolean isLast)
                              :createdAt now
                              :updatedAt now}
+                ;; Add optional fields if present
+                new-progress (cond-> new-progress
+                              errors (assoc :errors errors)
+                              warnings (assoc :warnings warnings))
                 result (db/create-progress db new-progress)]
             (http-resp/ok {:result "created" 
                           :filename filename
                           :counts counts
                           :total total
-                          :isCompleted (boolean isLast)}))
+                          :isCompleted (boolean isLast)
+                          :errors (or errors [])
+                          :warnings (or warnings [])}))
           
           ;; Update existing progress
           :else
@@ -113,9 +119,14 @@
                 new-counts {:done (+ (get-in existing [:counts :done] 0) done)
                            :warn (+ (get-in existing [:counts :warn] 0) warn)
                            :failed (+ (get-in existing [:counts :failed] 0) failed)}
+                ;; Append new errors and warnings to existing ones
+                all-errors (concat (or (:errors existing) []) (or errors []))
+                all-warnings (concat (or (:warnings existing) []) (or warnings []))
                 update-doc {$set {:counts new-counts
                                  :updatedAt now
-                                 :isCompleted (boolean isLast)}}
+                                 :isCompleted (boolean isLast)
+                                 :errors all-errors
+                                 :warnings all-warnings}}
                 ;; Add total if provided and not already set
                 update-doc (if (and total (nil? (:total existing)))
                             (assoc-in update-doc [$set :total] total)
@@ -126,7 +137,9 @@
                           :filename filename
                           :counts new-counts
                           :total (or total (:total existing))
-                          :isCompleted (boolean isLast)}))))
+                          :isCompleted (boolean isLast)
+                          :errors all-errors
+                          :warnings all-warnings}))))
       
       (catch Exception e
         (log/error "Error updating progress:" e)

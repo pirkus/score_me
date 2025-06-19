@@ -63,7 +63,87 @@ Response:
     "failed": 2
   },
   "total": 10000,
-  "isCompleted": false
+  "isCompleted": false,
+  "errors": [],
+  "warnings": []
+}
+```
+
+### 2b. Update progress with errors and warnings
+```bash
+curl -X POST http://localhost:8081/progress \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filename": "sales_data_2024.csv",
+    "counts": {
+      "done": 300,
+      "warn": 5,
+      "failed": 3
+    },
+    "errors": [
+      {
+        "line": 150,
+        "message": "Invalid date format: 2024-13-01"
+      },
+      {
+        "line": 205,
+        "message": "Missing required field: customer_id"
+      },
+      {
+        "line": 312,
+        "message": "Duplicate order ID: ORD-12345"
+      }
+    ],
+    "warnings": [
+      {
+        "line": 88,
+        "message": "Product code deprecated: PROD-OLD-123"
+      },
+      {
+        "line": 195,
+        "message": "Price exceeds normal range: $10,000"
+      }
+    ]
+  }'
+```
+
+Response:
+```json
+{
+  "result": "updated",
+  "filename": "sales_data_2024.csv",
+  "counts": {
+    "done": 900,
+    "warn": 15,
+    "failed": 5
+  },
+  "total": 10000,
+  "isCompleted": false,
+  "errors": [
+    {
+      "line": 150,
+      "message": "Invalid date format: 2024-13-01"
+    },
+    {
+      "line": 205,
+      "message": "Missing required field: customer_id"
+    },
+    {
+      "line": 312,
+      "message": "Duplicate order ID: ORD-12345"
+    }
+  ],
+  "warnings": [
+    {
+      "line": 88,
+      "message": "Product code deprecated: PROD-OLD-123"
+    },
+    {
+      "line": 195,
+      "message": "Price exceeds normal range: $10,000"
+    }
+  ]
 }
 ```
 
@@ -118,7 +198,43 @@ Response:
   "total": 10000,
   "isCompleted": true,
   "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-01T10:15:00Z"
+  "updatedAt": "2024-01-01T10:15:00Z",
+  "errors": [
+    {
+      "line": 150,
+      "message": "Invalid date format: 2024-13-01"
+    },
+    {
+      "line": 205,
+      "message": "Missing required field: customer_id"
+    },
+    {
+      "line": 312,
+      "message": "Duplicate order ID: ORD-12345"
+    },
+    {
+      "line": 4521,
+      "message": "Invalid product code: NULL"
+    },
+    {
+      "line": 7892,
+      "message": "Negative quantity: -5"
+    }
+  ],
+  "warnings": [
+    {
+      "line": 88,
+      "message": "Product code deprecated: PROD-OLD-123"
+    },
+    {
+      "line": 195,
+      "message": "Price exceeds normal range: $10,000"
+    },
+    {
+      "line": 3421,
+      "message": "Customer address incomplete"
+    }
+  ]
 }
 ```
 

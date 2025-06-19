@@ -129,7 +129,79 @@
         
         ;; Verify total was added
         (let [saved (db/find-progress @test-db "add-total.csv" email)]
-          (is (= 200 (:total saved))))))))
+          (is (= 200 (:total saved))))))
+    
+    (testing "Create progress with errors and warnings"
+      (let [request (test-utils/make-test-request
+                     {:filename "errors-test.csv"
+                      :counts {:done 50 :warn 2 :failed 3}
+                      :errors [{:line 10 :message "Invalid date format"}
+                               {:line 25 :message "Missing required field"}
+                               {:line 30 :message "Duplicate entry"}]
+                      :warnings [{:line 15 :message "Deprecated field used"}
+                                {:line 40 :message "Value exceeds recommended range"}]}
+                     :identity identity)
+            response (handler request)
+            body (test-utils/parse-json-response response)]
+        (is (= 200 (:status response)))
+        (is (= 3 (count (:errors body))))
+        (is (= 2 (count (:warnings body))))
+        
+        ;; Verify specific error details
+        (let [first-error (first (:errors body))]
+          (is (= 10 (:line first-error)))
+          (is (= "Invalid date format" (:message first-error))))
+        
+        ;; Verify in database
+        (let [saved (db/find-progress @test-db "errors-test.csv" email)]
+          (is (= 3 (count (:errors saved))))
+          (is (= 2 (count (:warnings saved)))))))
+    
+    (testing "Append errors and warnings on update"
+      (let [;; First create with initial errors
+            _ (handler (test-utils/make-test-request
+                       {:filename "append-errors.csv"
+                        :counts {:done 10 :warn 1 :failed 1}
+                        :errors [{:line 5 :message "Initial error"}]
+                        :warnings [{:line 3 :message "Initial warning"}]}
+                       :identity identity))
+            ;; Then update with additional errors and warnings
+            update-request (test-utils/make-test-request
+                           {:filename "append-errors.csv"
+                            :counts {:done 20 :warn 1 :failed 2}
+                            :errors [{:line 50 :message "New error"}
+                                    {:line 75 :message "Another error"}]
+                            :warnings [{:line 60 :message "New warning"}]}
+                           :identity identity)
+            response (handler update-request)
+            body (test-utils/parse-json-response response)]
+        (is (= 200 (:status response)))
+        (is (= 3 (count (:errors body)))) ; 1 initial + 2 new
+        (is (= 2 (count (:warnings body)))) ; 1 initial + 1 new
+        
+        ;; Verify all errors are preserved in order
+        (let [errors (:errors body)]
+          (is (= 5 (:line (first errors))))
+          (is (= 50 (:line (second errors))))
+          (is (= 75 (:line (nth errors 2)))))
+        
+        ;; Verify in database
+        (let [saved (db/find-progress @test-db "append-errors.csv" email)]
+          (is (= 3 (count (:errors saved))))
+          (is (= 2 (count (:warnings saved)))))))
+    
+    (testing "Empty errors and warnings arrays are handled"
+      (let [request (test-utils/make-test-request
+                     {:filename "empty-arrays.csv"
+                      :counts {:done 100 :warn 0 :failed 0}
+                      :errors []
+                      :warnings []}
+                     :identity identity)
+            response (handler request)
+            body (test-utils/parse-json-response response)]
+        (is (= 200 (:status response)))
+        (is (= [] (:errors body)))
+        (is (= [] (:warnings body))))))))
 
 (deftest get-progress-handler-test
   (let [update-handler (system/update-progress-handler @test-db)

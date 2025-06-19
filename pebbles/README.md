@@ -41,7 +41,23 @@ Update or create progress for a file.
     "failed": 1
   },
   "total": 100,      // optional, can be set on first request
-  "isLast": false    // optional, set to true to mark as complete
+  "isLast": false,   // optional, set to true to mark as complete
+  "errors": [        // optional, list of errors encountered
+    {
+      "line": 15,
+      "message": "Invalid date format"
+    },
+    {
+      "line": 27,
+      "message": "Missing required field: email"
+    }
+  ],
+  "warnings": [      // optional, list of warnings encountered
+    {
+      "line": 10,
+      "message": "Deprecated field 'phone' used"
+    }
+  ]
 }
 ```
 
@@ -56,7 +72,9 @@ Update or create progress for a file.
     "failed": 1
   },
   "total": 100,
-  "isCompleted": false
+  "isCompleted": false,
+  "errors": [...],    // accumulated list of all errors
+  "warnings": [...]   // accumulated list of all warnings
 }
 ```
 
@@ -83,7 +101,23 @@ Retrieve progress for files.
   "total": 100,
   "isCompleted": false,
   "createdAt": "2024-01-01T00:00:00Z",
-  "updatedAt": "2024-01-01T00:10:00Z"
+  "updatedAt": "2024-01-01T00:10:00Z",
+  "errors": [
+    {
+      "line": 15,
+      "message": "Invalid date format"
+    },
+    {
+      "line": 27,
+      "message": "Missing required field"
+    }
+  ],
+  "warnings": [
+    {
+      "line": 10,
+      "message": "Deprecated field used"
+    }
+  ]
 }
 ```
 
@@ -93,11 +127,15 @@ Retrieve progress for files.
   {
     "id": "507f1f77bcf86cd799439011",
     "filename": "data1.csv",
+    "errors": [...],
+    "warnings": [...],
     ...
   },
   {
     "id": "507f1f77bcf86cd799439012",
     "filename": "data2.csv",
+    "errors": [...],
+    "warnings": [...],
     ...
   }
 ]
@@ -173,3 +211,5 @@ pebbles/
 3. **Immutable Completion**: Once `isLast` is set to true, the progress becomes immutable to prevent accidental updates after completion.
 
 4. **Functional Style**: The codebase follows functional programming principles with immutable data structures and pure functions where possible.
+
+5. **Error/Warning Tracking**: Detailed error and warning information is accumulated across all updates, providing a complete audit trail of issues encountered during processing.
