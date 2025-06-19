@@ -178,6 +178,16 @@ clj -M:test
 
 Tests use testcontainers to spin up a MongoDB instance automatically.
 
+## CI/CD
+
+This project includes CI/CD configurations for multiple platforms:
+
+- **CircleCI**: `.circleci/config.yml`
+- **GitHub Actions**: `.github/workflows/ci.yml`  
+- **GitLab CI**: `.gitlab-ci.yml`
+
+See [CI_CD_SETUP.md](CI_CD_SETUP.md) for detailed setup instructions.
+
 ## Project Structure
 
 ```
